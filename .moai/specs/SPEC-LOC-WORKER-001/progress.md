@@ -39,6 +39,21 @@
 - RED 근거: 시험 파일 5개 모두 구현 전 실행에서 `TS2307: Cannot find module` 실패를 확인한 뒤 구현함
 - 설계서 예시와 차이: design.md §5.3의 셀 `892a100d2c3ffff`는 유효한 Res 9 셀이지만 중심이 뉴욕(40.7498, -73.9900)이다. 좌표 (37.4501, 126.6532)의 Res 9 셀은 `8930e0a845bffff`이다. 문서 수정은 manager-spec 소관
 
+### M1b (2026-11-03, manager-develop, cycle_type=tdd, 실제 Redis)
+
+- 기준 트리: 브랜치 `worktree-agent-aa76700c775879184`, 시작 커밋 `6d1d94c`(M1a, main과 같음)
+- Redis: 컨테이너 `evacs-redis`, `redis_version:7.4.10`, `redis_mode:standalone`. 시험은 DB 1~11을 파일별로 나눠 쓰고, 이 SPEC의 키 패턴만 지운다(FLUSHDB 없음). 시험 뒤 `INFO keyspace`는 빈 상태
+- plan.md §C 사전 점검
+  - 3 버전: 7.4.10 (7.0 이상 충족)
+  - 6 전달 횟수: XREADGROUP 뒤 1 → `XCLAIM`(JUSTID 없음) 2 → `XCLAIM … JUSTID` 2(증가 없음) → `XAUTOCLAIM` 3. `XAUTOCLAIM`은 삭제된 ID를 세 번째 원소로 돌려주고 PEL에서 지움. 삭제된 ID의 `XCLAIM`은 빈 배열
+  - 7 보존 전제: `maxmemory-policy noeviction`, `appendonly no`, `save 3600 1 300 100 60 10000`(RDB 켜짐), `appendfsync everysec`. 전제 충족. 다만 AOF가 꺼져 있어 크래시 시 마지막 RDB 이후 버전 키 증가분을 잃을 수 있다(F4, 미결)
+- ioredis 6.0.0 실측: `xreadgroup`·`xpending`(요약/확장)·`xclaim`·`xautoclaim`·`xinfo`·`script('LOAD')`·`evalsha`·`eval` 호출 형태와 응답 모양이 Redis 원 응답과 같음. 오류는 메시지 접두사(`NOGROUP`, `BUSYGROUP`, `NOSCRIPT`)로 구분. `zrange`의 stop 인자는 타입상 문자열만 받음. 비밀번호만 있는 URL은 `requirepass`가 없는 서버에서 경고만 내고 연결됨, `user:pass` URL은 WRONGPASS로 `connect()` 거부
+- AC 상태(M1b 범위): AC-LW-001~017 통과. AC-LW-011은 M1a에서 통과. 근거는 `npm --prefix services/location-worker test -- --json` 결과(209건 통과, 실패 0)
+- 전체 시험: 16개 파일, 209건 통과. 커버리지 문장 96.81%, 분기 88.33%, 함수 97.89%, 줄 98.06%
+- 빌드·타입 검사·린트 종료 코드 0. `node dist/src/main.js` 기동 → `/healthz` 200, `/readyz` 200, SIGTERM → 종료 코드 0
+- AC-LW-007 정적 검사 (1)·(2): 세 디렉터리가 모두 있는 상태에서 각각 0줄
+- RED 근거: 새 시험 파일 11개 모두 구현 전 실행에서 `TS2307: Cannot find module` 실패를 확인한 뒤 구현함
+
 ## §E.3 Run-phase Audit-Ready Signal
 
 _<pending run-phase>_

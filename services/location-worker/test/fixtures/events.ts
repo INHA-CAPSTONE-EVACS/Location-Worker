@@ -47,6 +47,11 @@ export function locationEvent(
   };
 }
 
+/** 엔트리 ID를 Redis가 정할 때(`*`) 쓰는 이벤트. 미래 시각 방어에 걸리지 않게 현재 시각 기준으로 만든다. */
+export function liveEvent(o: LocationOverrides = {}) {
+  return locationEvent({measuredAtMs: Date.now() - 1000, ...o});
+}
+
 export function eventFields(event: unknown): string[] {
   return ['event', JSON.stringify(event)];
 }

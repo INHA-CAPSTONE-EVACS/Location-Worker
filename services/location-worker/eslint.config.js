@@ -2,7 +2,7 @@
 const gts = require('gts');
 
 module.exports = [
-  {ignores: ['dist/', 'coverage/', 'node_modules/']},
+  {ignores: ['dist/', 'coverage/', 'node_modules/', '.test-build/']},
   ...gts,
   {
     files: ['**/*.js'],
