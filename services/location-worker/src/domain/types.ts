@@ -13,6 +13,8 @@ export type StateUpdateResult =
       stateVersion: number;
       /** FIRST이면 null */
       previousH3CellId: string | null;
+      /** `stream:vehicle:state`에 기록된 엔트리 ID(처리 지연 계산용) */
+      stateEntryId: string;
     }
   | {outcome: RejectedOutcome};
 

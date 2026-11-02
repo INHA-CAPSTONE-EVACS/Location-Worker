@@ -5,6 +5,18 @@
 /** Stream 엔트리에서 봉투 JSON을 담는 유일한 필드(C6). */
 export const EVENT_FIELD = 'event';
 
+// Redis 키(design.md §2)
+export const LOCATION_STREAM = 'stream:vehicle:location';
+export const STATE_STREAM = 'stream:vehicle:state';
+export const DLQ_STREAM = 'stream:vehicle:location:dlq';
+export const CONSUMER_GROUP = 'location-worker';
+export const ACTIVE_CELLS_KEY = 'h3:cells:active';
+export const CELL_KEY_PREFIX = 'h3:vehicles:';
+export const vehicleStateKey = (vehicleId: string) =>
+  `vehicle:${vehicleId}:state`;
+export const vehicleVersionKey = (vehicleId: string) =>
+  `vehicle:${vehicleId}:version`;
+
 export const LOCATION_EVENT_TYPE = 'VEHICLE_LOCATION_UPDATED';
 export const STATE_EVENT_TYPE = 'VEHICLE_STATE_UPDATED';
 export const SCHEMA_VERSION = 1;
