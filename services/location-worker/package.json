@@ -1,0 +1,32 @@
+{
+  "name": "@evacs/location-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EVACS Location Worker (SPEC-LOC-WORKER-001)",
+  "license": "UNLICENSED",
+  "main": "dist/src/main.js",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest",
+    "test:unit": "jest --selectProjects unit",
+    "coverage": "jest --coverage",
+    "lint": "eslint . && prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "fix": "eslint . --fix && prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "dependencies": {
+    "h3-js": "4.5.0",
+    "ioredis": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/node": "26.6.6",
+    "gts": "7.0.0",
+    "jest": "30.5.2",
+    "ts-jest": "29.4.15",
+    "typescript": "6.0.3"
+  }
+}

@@ -19,7 +19,25 @@
 
 ## §E.2 Run-phase Evidence
 
-_<pending run-phase>_
+### M1a (2026-11-03, manager-develop, cycle_type=tdd, Redis 없이 가능한 범위)
+
+- 기준 트리: 브랜치 `worktree-agent-aa76700c775879184`, 기준 커밋 `af81fdd`(plan-phase 산출물). 측정은 이 트리에서 실행한 결과다.
+- 런타임: node v26.13.0(`process.release.lts` = `Lithium`), npm 11.20.0
+- 설치 버전(정확히 고정): h3-js 4.5.0, ioredis 6.0.0(설치만, M1a에서 사용 코드 없음), typescript 6.0.3, jest 30.5.2, ts-jest 29.4.15, @types/jest 30.0.0, @types/node 26.6.6, gts 7.0.0(ESLint 9.39.5 포함)
+- TypeScript 7.0.2가 registry latest이지만 ts-jest 29.4.15의 peerDependency가 `typescript >=4.3 <7`이라 6.0.3으로 고정했다.
+
+| AC | 상태 | 확인 명령 | 관측 결과 |
+|---|---|---|---|
+| AC-LW-005 | PARTIAL | `npm --prefix services/location-worker test` (`test/unit/message-codec.test.ts`) | 13개 무효 사례가 각각 사유 코드로 거부되고 대조군(+2000 ms)은 수용됨. DLQ 기록·ACK·상태 불변·warn 로그는 Redis가 필요해 M1b에서 확인 |
+| AC-LW-011 | PASS | 같은 명령 (`test/unit/h3-cell-mapper.test.ts`) | 해상도 8·9에서 표본 8개가 기대 셀과 일치하고 반환 셀 해상도가 설정값과 같음. 기대 셀은 h3-js로 계산 후 isValidCell·getResolution·셀 중심 거리(최대 변 길이 이내)로 검증해 고정 |
+| AC-LW-007 | PARTIAL | AC 원문의 정적 검사 두 건(경로에 `services/location-worker/` 접두사) | M1a 트리에서 각각 0줄(코드 일치 없음, `src/store` 디렉터리는 아직 없음). 출처별 동일 결과 시험은 Redis 필요(M1b) |
+| AC-LW-010 | PARTIAL | `test/unit/config.test.ts` | `H3_RESOLUTION=10`은 ConfigError. 종료 코드 확인은 `main.ts`가 생기는 M1b |
+| 그 밖의 AC | NOT-VERIFIABLE-WITHOUT-REDIS | — | 실제 Redis가 필요 |
+
+- 전체 시험: 5개 파일, 162건 통과. 커버리지(전체) 문장 99.41%, 분기 98.56%, 함수 100%, 줄 100%
+- 빌드(`tsc -p tsconfig.build.json`)·타입 검사·린트(gts ESLint + Prettier) 모두 종료 코드 0
+- RED 근거: 시험 파일 5개 모두 구현 전 실행에서 `TS2307: Cannot find module` 실패를 확인한 뒤 구현함
+- 설계서 예시와 차이: design.md §5.3의 셀 `892a100d2c3ffff`는 유효한 Res 9 셀이지만 중심이 뉴욕(40.7498, -73.9900)이다. 좌표 (37.4501, 126.6532)의 Res 9 셀은 `8930e0a845bffff`이다. 문서 수정은 manager-spec 소관
 
 ## §E.3 Run-phase Audit-Ready Signal
 

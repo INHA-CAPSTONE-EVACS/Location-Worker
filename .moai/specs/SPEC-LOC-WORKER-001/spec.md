@@ -2,9 +2,9 @@
 id: SPEC-LOC-WORKER-001
 title: "EVACS Location Worker — 위치 스트림 처리, 비활성 차량 정리, 차량 밀도 집계"
 version: "0.3.0"
-status: draft
+status: in-progress
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-03
 author: CHS
 priority: P0
 phase: "v0.1.0 target"

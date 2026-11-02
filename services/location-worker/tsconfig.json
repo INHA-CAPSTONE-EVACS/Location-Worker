@@ -1,0 +1,16 @@
+{
+  "extends": "./node_modules/gts/tsconfig-google.json",
+  "compilerOptions": {
+    "composite": false,
+    "rootDir": ".",
+    "outDir": "dist",
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "types": ["node", "jest"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}
