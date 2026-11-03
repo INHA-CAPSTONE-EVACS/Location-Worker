@@ -1,7 +1,7 @@
 ---
 id: SPEC-LOC-WORKER-001
 title: "EVACS Location Worker — 위치 스트림 처리, 비활성 차량 정리, 차량 밀도 집계"
-version: "0.3.0"
+version: "0.3.1"
 status: in-progress
 created: 2026-11-02
 updated: 2026-11-03
@@ -23,6 +23,7 @@ tier: L
 | 0.1.0 | 2026-11-02 | CHS (manager-spec) | 최초 작성. Decision Point 1 승인안(M1 핵심 파이프라인, M2 비활성 차량 정리, M3 밀도 집계)과 사용자 결정 C1~C9를 반영 |
 | 0.2.0 | 2026-11-02 | CHS (manager-spec) | plan-audit 1회차(FAIL 0.69) 반영. 버전 카운터 분리(만료 독립), 재전달 경로 전체에 전달 횟수 검사, Redis 서버 시계 기준, 주기 claim 의미 정의, 셀 수 게시와 테이블 분리, 종료 drain 시간 제한, 요구사항별 출처 표기. 요구사항 24→25, 인수 기준 24→25 |
 | 0.3.0 | 2026-11-02 | CHS (manager-spec) | plan-audit 2회차(FAIL 0.83) 반영. 출처 무관 정적 검사를 입력 producer 읽기로 한정, 시작 회수를 한 번 훑기로 고정(AC-LW-006 (c) 추가), 전달 횟수 경계 표현 정리, 버전 키 보존 전제와 다중 인스턴스 전제 명시, research.md의 대체된 방식 표시. 요구사항·인수 기준 수는 그대로 25/25 |
+| 0.3.1 | 2026-11-03 | CHS (manager-spec) | sync-audit 1회차(FAIL 68.9)의 문서 지적 반영. AC-LW-004·AC-LW-006 (c)의 재회수 관찰 창을 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS`로 고치고 시험의 고정 여유는 계약 밖임을 명시(F5, plan-audit N4-6), spec-compact.md의 같은 항목 정리. design.md §7 `/healthz` 설명을 §4 8번의 liveness 기한 규칙에 맞춤. 요구사항·인수 기준 수는 그대로 25/25 |
 
 ---
 

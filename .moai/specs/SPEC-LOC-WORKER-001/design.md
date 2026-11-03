@@ -199,7 +199,7 @@ consumer 이름 기본값은 `CONSUMER_NAME`(없으면 `HOSTNAME`, 그것도 없
 
 - 로그: stdout에 한 줄 JSON(`ts`, `level`, `msg`, `outcome`, `entryId`, `vehicleId`, `latencyMs`). 입력 봉투의 `producer`는 `src/consumer`에서 로그에만 기록하고 판단에 쓰지 않는다. 출력 이벤트의 `producer: "location-worker"`는 `apply-location.lua`가 상수로 기록한다(REQ-LW-018). AC-LW-007 정적 검사는 이 둘을 구분한다.
 - `latencyMs` = 상태 이벤트 기록 시각 − 엔트리 ID 시각.
-- `/healthz`: 읽기 루프 heartbeat가 3 × `BLOCK_MS` 이내면 200, 아니면 503. heartbeat는 루프 반복마다 갱신된다(§4 8번, Redis 오류 반복 포함).
+- `/healthz`: 현재 시각이 읽기 루프의 liveness 기한(`liveUntil`) 이하이면 200, 지나면 503. 기한은 heartbeat마다 다시 정해진다. 시작할 때, 루프 반복을 시작할 때, Redis 오류 뒤 재시도 대기에 들어갈 때는 now + 3 × `BLOCK_MS`이고, XREADGROUP 직전에는 now + max(3 × `BLOCK_MS`, 명령 시간 제한 + `BLOCK_MS`), 엔트리 하나를 처리하기 직전에는 now + max(3 × `BLOCK_MS`, 2 × 명령 시간 제한 + `BLOCK_MS`)다(명령 시간 제한 = `BLOCK_MS` + 1000 ms). 따라서 Redis가 끊기거나 응답을 멈춰도 루프가 살아 있으면 200이고, 루프가 명령 밖에서 멈추면 3 × `BLOCK_MS` 뒤 503이다(§4 8번).
 - `/readyz`: Redis PING 성공 + `XINFO GROUPS`에 `location-worker` 존재 → 200, 아니면 503. 본문에 대기 건수, 판정 카운터, 엣지 밀도 상태(활성/비활성 사유).
 - 종료 코드: 정상 종료(drain 포함) 0, 복구 불가 오류 1.
 

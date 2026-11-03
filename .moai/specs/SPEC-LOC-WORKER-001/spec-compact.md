@@ -51,9 +51,9 @@
 | AC-LW-001 | 001 | 그룹 없음 + 기존 엔트리 P / 시작 후 Q 기록 / 그룹 생성, Q 처리, P 미처리 |
 | AC-LW-002 | 002, 004, 016 | 같은 payload 두 번; 커밋 후 ACK 전 종료 / 처리·재시작 / 스트림 +1, DUPLICATE, PEL 0 |
 | AC-LW-003 | 003 | X가 N건 미ACK, 1건 트림 / Y 회수 / N−1건 처리, 트림 ID 로그 |
-| AC-LW-004 | 004, 003 | 명령 관측기, 일시 오류 엔트리 T / 처리 후 최대 2 × `PENDING_MIN_IDLE_MS` 관찰 / XACK가 커밋 뒤, T는 2 × P 이내에 같은 프로세스가 재시도해 ACK |
+| AC-LW-004 | 004, 003 | 명령 관측기, 일시 오류 엔트리 T / 처리 후 최대 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS` 관찰 / XACK가 커밋 뒤, T는 2 × P + `BLOCK_MS` 이내에 같은 프로세스가 재시도해 ACK |
 | AC-LW-005 | 005 | 무효 13종 + 대조군(+2000 ms) / 처리 / 13건 DLQ+ACK, 대조군 FIRST |
-| AC-LW-006 | 006, 002, 003 | 매번 일시 오류 A; 프로세스를 죽이는 B; 시작 회수 중 한 번 일시 오류 G / 실행·재시작 반복·시작 / A·B는 6번째 전달(`deliveries` = 6)에서 DLQ, 이후 F 정상; G는 시작 회수 직후 전달 횟수 2(+1만), DLQ 안 됨, 이후 2 × `PENDING_MIN_IDLE_MS` 이내 주기적 회수로 처리 |
+| AC-LW-006 | 006, 002, 003 | 매번 일시 오류 A; 프로세스를 죽이는 B; 시작 회수 중 한 번 일시 오류 G / 실행·재시작 반복·시작 / A·B는 6번째 전달(`deliveries` = 6)에서 DLQ, 이후 F 정상; G는 시작 회수 직후 전달 횟수 2(+1만), DLQ 안 됨, 이후 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS` 이내 주기적 회수로 처리 |
 | AC-LW-007 | 007 | producer만 다름 / 처리 / 결과 동일; 정적 검사 (1) 처리 경로 코드의 sumo·simulat(주석 제외) 0줄, (2) processing·store TS의 입력 producer 읽기 0줄(출력 envelope를 만드는 Lua는 제외) |
 | AC-LW-008 | 008 | 정상·Redis 끊김·그룹 삭제·루프 정지 / 조회 / readyz 200·503·503, healthz 정지 시 503 |
 | AC-LW-009 | 009 | 7종 결과 / 처리 / 엔트리당 JSON 줄 1건, outcome 일치 |

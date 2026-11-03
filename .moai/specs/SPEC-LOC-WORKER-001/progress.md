@@ -135,3 +135,13 @@ Justification: 한 언어·한 도메인의 코딩 작업이라 병렬화 이득
 
 - run 워크플로우의 Phase 5(분석·계획)와 그 뒤 Decision Point 1(계획 승인), Phase 6(작업 분해)은 따로 실행하지 않았다. 감사를 통과한(0.91) `plan.md` §F와 착수 승인이 그 역할을 대신한다. `tasks.md`는 `manager-develop`이 M1 시작 때 `plan.md` §F에서 만든다.
 - 목표 조건(`/moai goal`)은 아직 걸지 않았다. 작업은 `manager-develop` 순차 위임으로 이어가고, 마일스톤마다 증거를 직접 확인한다.
+
+## §G Sync 감사 조치 기록
+
+### sync 감사 1회차 조치 (2026-11-03, manager-spec 기록)
+
+- 감사 보고서: `.moai/reports/sync-audit/SPEC-LOC-WORKER-001-sync-audit-1.md`. 판정 FAIL(가중 조화평균 68.9, must-pass 차단: Functionality, AC-LW-008)
+- F1~F4(liveness 기한, 상태 점검 시험, MX 태그, 처리되지 않은 거부): 커밋 `0759234`에서 수정(§E.2 "sync-audit 1회차 지적 F1~F4 수정" 참조)
+- F5(acceptance.md 재회수 관찰 창을 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS`로)와 design.md §7 `/healthz` 기한 문구: 이번 문서 수정에서 반영했다. spec.md 0.3.1 HISTORY 참조. 이 수정은 아직 커밋 전이다
+- 재감사: 대기 중. 이 기록은 재감사 통과를 뜻하지 않는다
+- 위치 메모: §E.3은 run-phase, §E.4는 sync-phase 소유라 manager-spec은 이 별도 절에 기록했다. sync 단계 소유자가 §E.4를 쓸 때 옮기거나 참조하면 된다

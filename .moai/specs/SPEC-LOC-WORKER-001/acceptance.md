@@ -57,8 +57,8 @@
 
 **AC-LW-004 — ACK 순서와 일시 오류 후 자체 재시도**
 - Given Redis 명령 순서를 기록하는 관측기를 붙인 Worker, 그리고 첫 처리 시도에서만 일시 오류(연결 끊김)를 일으키는 장애가 주입된 엔트리 T
-- When 적용·중복·과거·DLQ 판정을 각각 일으키는 엔트리 4건과 T를 처리하고, Worker를 재시작하지 않은 채 T의 첫 시도 뒤 최대 2 × `PENDING_MIN_IDLE_MS`까지 지켜보면
-- Then 4건 모두 XACK가 해당 엔트리의 원자 갱신 실행 또는 DLQ 기록보다 뒤에 나타나고, T는 첫 시도 후 ACK 되지 않은 채 대기 목록에 남았다가, 첫 시도 뒤 2 × `PENDING_MIN_IDLE_MS` 이내에 같은 프로세스의 주기적 회수로 처리되어 ACK 된다(대기 엔트리는 마지막 전달 뒤 P ~ 2P 사이에 회수된다, P = `PENDING_MIN_IDLE_MS`).
+- When 적용·중복·과거·DLQ 판정을 각각 일으키는 엔트리 4건과 T를 처리하고, Worker를 재시작하지 않은 채 T의 첫 시도 뒤 최대 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS`까지 지켜보면
+- Then 4건 모두 XACK가 해당 엔트리의 원자 갱신 실행 또는 DLQ 기록보다 뒤에 나타나고, T는 첫 시도 후 ACK 되지 않은 채 대기 목록에 남았다가, 첫 시도 뒤 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS` 이내에 같은 프로세스의 주기적 회수로 처리되어 ACK 된다(대기 엔트리의 재시도는 마지막 전달 뒤 P ~ 2P 사이에 시작되고, `BLOCK_MS`는 회수 타이머 지연과 처리 시간을 흡수하는 여유다, P = `PENDING_MIN_IDLE_MS`).
 
 **AC-LW-005 — 검증 실패 엔트리**
 - Given 다음 엔트리들: `event` 필드 JSON 파싱 불가, eventType `VEHICLE_STATE_UPDATED`, schemaVersion 2, vehicleId 누락, 위도 95, 경도 181, heading 360, speedMps −1, vehicleType `BUS`, sequence 1.5, sequence −1, measuredAt `"yesterday"`, measuredAt = 수신 시각 + 2001 ms. 그리고 대조군으로 measuredAt = 수신 시각 + 2000 ms인 유효 엔트리
@@ -67,8 +67,10 @@
 
 **AC-LW-006 — 모든 재전달 경로의 전달 횟수 상한과 시작 회수 1회 원칙**
 - Given (a) 처리할 때마다 일시 오류를 던지는 장애가 주입된 엔트리 A, (b) 처리 도중 프로세스를 종료시키는 장애가 주입된 엔트리 B와 그 뒤의 정상 엔트리 F, 테스트 하네스가 종료될 때마다 Worker를 같은 consumer 이름으로 다시 띄움, (c) 자기 consumer의 대기 목록에 전달 횟수 1로 남아 있는 유효 엔트리 G와, 시작 회수 단계의 첫 처리에서만 일시 오류를 일으키는 장애
-- When (a) Worker가 재시작 없이 계속 실행되고, (b) Worker가 반복해서 종료·재시작되고, (c) Worker를 시작해 시작 회수 단계가 끝난 직후(`PENDING_MIN_IDLE_MS` 경과 전)에 확인하고, 이어서 시작 회수 단계가 끝난 뒤 최대 2 × `PENDING_MIN_IDLE_MS`까지 지켜보면
-- Then (a) A는 전달 1~5회째마다 처리를 시도해 모두 실패하고, 전달 횟수가 6이 되는 여섯 번째 전달에서 처리되지 않고 `stream:vehicle:location:dlq`에 기록되고 ACK 되며, DLQ 엔트리의 `deliveries` 필드는 6이다. (b) B는 전달 1~5회의 처리 시도(각각 프로세스 종료) 뒤, 전달 횟수가 6이 되는 다음 시작의 회수 단계에서 처리되지 않고 DLQ에 기록(`deliveries` = 6)되고 ACK 되며, 그 뒤 F가 정상 처리되고 Worker는 계속 실행된다. (c) 시작 회수 단계 직후 G는 DLQ에 없고 대기 목록에 남아 있으며 전달 횟수는 정확히 2(1만 증가)이다. 시작 회수 단계가 끝난 뒤 2 × `PENDING_MIN_IDLE_MS` 이내에 G는 주기적 회수로 처리되어(전달 횟수 3) ACK 되고 DLQ에 기록되지 않는다.
+- When (a) Worker가 재시작 없이 계속 실행되고, (b) Worker가 반복해서 종료·재시작되고, (c) Worker를 시작해 시작 회수 단계가 끝난 직후(`PENDING_MIN_IDLE_MS` 경과 전)에 확인하고, 이어서 시작 회수 단계가 끝난 뒤 최대 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS`까지 지켜보면
+- Then (a) A는 전달 1~5회째마다 처리를 시도해 모두 실패하고, 전달 횟수가 6이 되는 여섯 번째 전달에서 처리되지 않고 `stream:vehicle:location:dlq`에 기록되고 ACK 되며, DLQ 엔트리의 `deliveries` 필드는 6이다. (b) B는 전달 1~5회의 처리 시도(각각 프로세스 종료) 뒤, 전달 횟수가 6이 되는 다음 시작의 회수 단계에서 처리되지 않고 DLQ에 기록(`deliveries` = 6)되고 ACK 되며, 그 뒤 F가 정상 처리되고 Worker는 계속 실행된다. (c) 시작 회수 단계 직후 G는 DLQ에 없고 대기 목록에 남아 있으며 전달 횟수는 정확히 2(1만 증가)이다. 시작 회수 단계가 끝난 뒤 2 × `PENDING_MIN_IDLE_MS` + `BLOCK_MS` 이내에 G는 주기적 회수로 처리되어(전달 횟수 3) ACK 되고 DLQ에 기록되지 않는다.
+
+> 참고: 통합 시험은 AC-LW-004와 AC-LW-006 (c)의 재회수 관찰 창에 실행 환경의 스케줄링 지연을 감안한 고정 여유(현재 +500 ms)를 더할 수 있으며, 이 여유는 계약에 포함되지 않는다.
 
 **AC-LW-007 — 입력 출처 무관 처리**
 - Given `producer` 값만 `vehicle-client`와 `sumo-adapter`로 다르고 나머지가 같은 payload 두 건(각각 다른 빈 Redis에서 처리)
