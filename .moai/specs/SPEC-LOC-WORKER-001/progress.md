@@ -42,7 +42,7 @@
 ### M1b (2026-11-03, manager-develop, cycle_type=tdd, 실제 Redis)
 
 - 기준 트리: 브랜치 `worktree-agent-aa76700c775879184`, 시작 커밋 `6d1d94c`(M1a, main과 같음)
-- Redis: 컨테이너 `evacs-redis`, `redis_version:7.4.10`, `redis_mode:standalone`. 시험은 DB 1~11을 파일별로 나눠 쓰고, 이 SPEC의 키 패턴만 지운다(FLUSHDB 없음). 시험 뒤 `INFO keyspace`는 빈 상태
+- Redis: 컨테이너 `evacs-redis`, `redis_version:7.4.10`, `redis_mode:standalone`. 시험은 DB 1~15를 파일별로 나눠 쓰고(M1b 시점 1~11, M2·M3에서 12~15 추가), 이 SPEC의 키 패턴만 지운다(FLUSHDB 없음). 시험 뒤 `INFO keyspace`는 빈 상태
 - plan.md §C 사전 점검
   - 3 버전: 7.4.10 (7.0 이상 충족)
   - 6 전달 횟수: XREADGROUP 뒤 1 → `XCLAIM`(JUSTID 없음) 2 → `XCLAIM … JUSTID` 2(증가 없음) → `XAUTOCLAIM` 3. `XAUTOCLAIM`은 삭제된 ID를 세 번째 원소로 돌려주고 PEL에서 지움. 삭제된 ID의 `XCLAIM`은 빈 배열
@@ -64,6 +64,15 @@
 - AC-LW-007 정적 검사 (1)·(2) 각각 0줄, AskUserQuestion 검색 0줄, 시험 뒤 Redis `INFO keyspace` 빈 상태
 - RED 근거: 새 시험 파일 7개 모두 구현 전 `TS2307: Cannot find module` 실패 확인. 구현 중 발견한 결함(테이블의 `h3Resolution` 누락이 스키마 위반이 아니라 해상도 불일치로 보고됨)은 단위 시험 2건을 먼저 실패시킨 뒤 고침
 - design.md §5.3 예시 셀 ID를 h3-js 실측값으로 바꾸고, §5.4 N4-3 문구를 고침(orchestrator 지시, T-020)
+
+### sync-audit 1회차 지적 F1~F4 수정 (2026-11-03, manager-develop)
+
+- 기준 트리: 시작 커밋 `155a4b6`(main과 같음). 보고서 `.moai/reports/sync-audit/SPEC-LOC-WORKER-001-sync-audit-1.md`
+- F1·F2: `health.test.ts`를 고쳐 Redis 차단 직후부터 2 × (BLOCK_MS + 1000) 동안 25 ms 간격 표본, 묶음 처리 도중 응답 정지(TCP 중계기 `stall()`), 루프 정지 후 503 시점이 3 × BLOCK_MS −50~+150 ms 안인지를 단언. 수정 전 코드에서 실패 확인(`"592:503"`부터 503 39건), 수정 후 통과. 원인은 시간 제한(BLOCK_MS + 1000)까지 머무는 명령 동안 heartbeat가 3 × BLOCK_MS 기준을 넘기는 것. 수정은 명령 직전 liveness 기한 연장(XREADGROUP 1개, 엔트리 처리 2개). 엔트리 처리 연장을 뺀 변이 코드에서도 시험이 실패함을 확인
+- F3: `LuaScript.load`·`run`에 `@MX:ANCHOR`(fan_in 3) 추가
+- F4: `main.ts` 종료 프라미스와 `health-server.ts` 응답 프라미스에 `@MX:WARN`과 catch 추가(종료 실패 시 error 로그 + 종료 코드 1, 검사 예외 시 500). 시험을 먼저 실패시킨 뒤(요청 시간 초과, exit 미호출) 고침
+- 전체 시험 3회 연속: 25개 파일, 265건 통과(3회 모두 실패 0). 커버리지 문장 97.86%, 분기 90.59%, 함수 98.47%, 줄 98.77%. 빌드·타입 검사·린트 종료 코드 0. AC-LW-007 정적 검사·AskUserQuestion 검색 0줄
+- 관찰(이번 범위 밖): Redis 장애 동안 오프라인 대기열에 쌓인 XREADGROUP이 재연결 직후 첫 엔트리를 가져가, 그 엔트리는 주기적 회수(P~2P 뒤)로 처리된다. 유실은 없다
 
 ## §E.3 Run-phase Audit-Ready Signal
 

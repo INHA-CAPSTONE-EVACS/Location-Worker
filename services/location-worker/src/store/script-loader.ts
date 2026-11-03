@@ -18,6 +18,8 @@ export class LuaScript {
   ) {}
 
   /** `src/store/lua/<name>.lua`를 읽어 올린다. 빌드 결과에서도 같은 상대 위치에 둔다. */
+  // @MX:ANCHOR: [AUTO] Lua 스크립트 적재의 유일한 진입점(fan_in 3: redis-vehicle-state-store, expired-vehicle-sweeper, density-publisher)
+  // @MX:REASON: 적재 실패는 ScriptLoadError로 시작을 막는 복구 불가 오류(REQ-LW-011)이고, 빌드 결과의 lua 디렉터리 위치 계약도 여기 있다
   static async load(redis: Redis, name: string): Promise<LuaScript> {
     let source: string;
     try {
@@ -40,6 +42,8 @@ export class LuaScript {
     }
   }
 
+  // @MX:ANCHOR: [AUTO] 원자 갱신·정리·밀도 게시가 모두 거치는 스크립트 실행 경로(fan_in 3: redis-vehicle-state-store, expired-vehicle-sweeper, density-publisher)
+  // @MX:REASON: NOSCRIPT일 때만 원문으로 다시 실행하고 그 밖의 오류는 그대로 던지는 계약이 세 호출처의 일시 오류 처리를 결정한다
   async run(
     redis: Redis,
     keys: readonly string[],

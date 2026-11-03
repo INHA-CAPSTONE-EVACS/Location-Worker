@@ -17,10 +17,20 @@ export class HealthServer {
 
   constructor(checks: HealthChecks) {
     this.server = http.createServer((req, res) => {
-      void respond(req.url, checks).then(([status, body]) => {
-        res.writeHead(status, {'content-type': 'application/json'});
-        res.end(JSON.stringify(body));
-      });
+      // @MX:WARN: [AUTO] 요청 처리기 안에서 기다리지 않는(fire-and-forget) 프라미스
+      // @MX:REASON: 검사가 예외를 던지면 응답 없이 요청이 남고 처리되지 않은 거부가 된다. catch에서 500으로 응답한다(sync-audit F4)
+      void respond(req.url, checks)
+        .catch((err: unknown): [number, unknown] => [
+          500,
+          {
+            ready: false,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        ])
+        .then(([status, body]) => {
+          res.writeHead(status, {'content-type': 'application/json'});
+          res.end(JSON.stringify(body));
+        });
     });
   }
 

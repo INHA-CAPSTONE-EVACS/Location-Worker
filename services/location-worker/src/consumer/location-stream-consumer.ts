@@ -50,6 +50,8 @@ export interface ConsumerDeps {
   deadLetters: DeadLetterPublisher;
   logger: Logger;
   metrics: Metrics;
+  /** 모든 Redis 명령에 걸린 시간 제한. 명령 하나는 이 시간 안에 반드시 끝난다 */
+  commandTimeoutMs: number;
   faults?: ConsumerFaults;
   clock?: Clock;
 }
@@ -67,7 +69,8 @@ const PAGE_SIZE = 100;
 /** 위치 스트림 소비자(REQ-LW-001~006, REQ-LW-009, REQ-LW-010). */
 export class LocationStreamConsumer {
   private running = false;
-  private heartbeatMs = 0;
+  /** 읽기 루프가 이 시각까지는 살아 있다고 볼 수 있다(liveness 기한) */
+  private liveUntilMs = 0;
   private inFlight = 0;
   private reclaimTimer: NodeJS.Timeout | undefined;
   private reclaiming: Promise<void> | undefined;
@@ -86,7 +89,7 @@ export class LocationStreamConsumer {
   async start(): Promise<void> {
     await this.ensureGroup();
     this.running = true;
-    this.heartbeatMs = this.clock.nowMs();
+    this.heartbeat();
     await this.recoverOwnPending();
     this.readLoopDone = this.readLoop();
     this.scheduleReclaim();
@@ -105,11 +108,23 @@ export class LocationStreamConsumer {
     return {drained: this.inFlight === 0};
   }
 
-  /** liveness: 읽기 루프 heartbeat가 3 × BLOCK_MS 이내 */
+  /** liveness: 읽기 루프의 기한(heartbeat 시각 + 다음 단계의 최대 소요 시간)이 지나지 않음 */
   isLive(): boolean {
-    return (
-      this.clock.nowMs() - this.heartbeatMs <= 3 * this.deps.config.blockMs
+    return this.clock.nowMs() <= this.liveUntilMs;
+  }
+
+  /**
+   * heartbeat. 기본 기한은 3 × BLOCK_MS다. 다음 단계가 Redis 명령 n개로 끝나는 경우에는
+   * 그 명령들이 시간 제한에 모두 걸려도 기한이 먼저 지나지 않게 n × 명령 시간 제한 + BLOCK_MS까지 늘린다.
+   * 명령 밖에서 멈추면(장애 주입 등) 3 × BLOCK_MS 뒤 503이 된다.
+   */
+  private heartbeat(boundedCommands = 0): void {
+    const {blockMs} = this.deps.config;
+    const window = Math.max(
+      3 * blockMs,
+      boundedCommands * this.deps.commandTimeoutMs + blockMs,
     );
+    this.liveUntilMs = this.clock.nowMs() + window;
   }
 
   private async ensureGroup(): Promise<void> {
@@ -171,13 +186,14 @@ export class LocationStreamConsumer {
   }
 
   // @MX:WARN: [AUTO] 장기 실행 비동기 루프. stop()이 reader 연결을 끊어 BLOCK을 깨운다
-  // @MX:REASON: heartbeat는 성공·실패와 관계없이 반복마다 갱신해야 liveness가 Redis 장애와 루프 정지를 구분한다(F5)
+  // @MX:REASON: Redis 장애 중 명령은 시간 제한(BLOCK_MS + 1000)까지 머물 수 있다. 명령 직전에 그 길이만큼 기한을 늘려야 liveness가 장애와 루프 정지를 구분한다(F5, sync-audit F1)
   private async readLoop(): Promise<void> {
     const {reader, config} = this.deps;
     while (this.running) {
-      this.heartbeatMs = this.clock.nowMs();
+      this.heartbeat();
       try {
         await this.faults.beforeRead?.();
+        this.heartbeat(1); // XREADGROUP 한 번
         const reply = (await reader.xreadgroup(
           'GROUP',
           CONSUMER_GROUP,
@@ -193,13 +209,14 @@ export class LocationStreamConsumer {
         this.groupMissing = false;
         // 이미 읽은 묶음은 종료 신호가 와도 끝까지 처리한다(REQ-LW-010)
         for (const [id, fields] of reply?.[0]?.[1] ?? []) {
+          // 엔트리 하나는 Redis 명령 두 번(원자 갱신 또는 DLQ 기록, 그다음 XACK)으로 끝난다
+          this.heartbeat(2);
           await this.handle(id, fields, 'read', 1);
-          this.heartbeatMs = this.clock.nowMs();
         }
       } catch (err) {
         if (!this.running) break;
         this.reportReadError(err);
-        this.heartbeatMs = this.clock.nowMs();
+        this.heartbeat();
         await sleep(config.blockMs);
       }
     }

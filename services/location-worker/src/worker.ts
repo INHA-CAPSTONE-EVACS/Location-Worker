@@ -62,6 +62,7 @@ export async function createWorker(
       deadLetters: new DeadLetterPublisher(redis, config.dlqMaxlen),
       logger,
       metrics,
+      commandTimeoutMs,
       faults: options.faults,
     });
 

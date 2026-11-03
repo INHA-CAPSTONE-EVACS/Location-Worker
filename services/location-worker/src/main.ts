@@ -52,10 +52,18 @@ export async function runWorker(options: RunOptions = {}): Promise<void> {
     if (stopping) return;
     stopping = true;
     logger.info('shutdown requested', {signal});
-    void worker.stop().then(({drained}) => {
-      logger.info('worker stopped', {drained});
-      exit(0);
-    });
+    // @MX:WARN: [AUTO] 신호 처리기에서 기다리지 않는(fire-and-forget) 종료 프라미스
+    // @MX:REASON: 거부되면 처리되지 않은 거부로 남고 exit가 호출되지 않아 프로세스가 끝나지 않는다. catch에서 error 로그 후 종료 코드 1(sync-audit F4)
+    void worker.stop().then(
+      ({drained}) => {
+        logger.info('worker stopped', {drained});
+        exit(0);
+      },
+      (err: unknown) => {
+        logger.error('shutdown failed', {err});
+        exit(1);
+      },
+    );
   };
   onSignal('SIGTERM', () => shutdown('SIGTERM'));
   onSignal('SIGINT', () => shutdown('SIGINT'));

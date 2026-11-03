@@ -1,9 +1,14 @@
 import * as net from 'node:net';
 
-/** Worker와 Redis 사이에 두는 TCP 중계기. block()으로 연결을 끊어 Redis 장애를 흉내 낸다. */
+/**
+ * Worker와 Redis 사이에 두는 TCP 중계기.
+ * block()은 연결을 끊고(연결 거부), stall()은 연결을 연 채 요청 전달만 멈춘다(응답 없는 네트워크 단절).
+ */
 export class TcpProxy {
   private blocked = false;
+  private stalled = false;
   private readonly sockets = new Set<net.Socket>();
+  private readonly links = new Map<net.Socket, net.Socket>();
 
   private constructor(private readonly server: net.Server) {}
 
@@ -32,6 +37,20 @@ export class TcpProxy {
     this.blocked = false;
   }
 
+  /** 요청을 버리지 않고 붙잡아 둔다. unstall() 때 순서대로 넘긴다(RESP 순서 유지) */
+  stall(): void {
+    this.stalled = true;
+    for (const [client, upstream] of this.links) {
+      client.unpipe(upstream);
+      client.pause();
+    }
+  }
+
+  unstall(): void {
+    this.stalled = false;
+    for (const [client, upstream] of this.links) client.pipe(upstream);
+  }
+
   async close(): Promise<void> {
     this.block();
     await new Promise<void>(resolve => this.server.close(() => resolve()));
@@ -43,13 +62,19 @@ export class TcpProxy {
       return;
     }
     const upstream = net.connect(port, host);
+    this.links.set(client, upstream);
     for (const s of [client, upstream]) {
       this.sockets.add(s);
       s.on('close', () => this.sockets.delete(s));
       s.on('error', () => s.destroy());
     }
-    client.on('close', () => upstream.destroy());
+    client.on('close', () => {
+      this.links.delete(client);
+      upstream.destroy();
+    });
     upstream.on('close', () => client.destroy());
-    client.pipe(upstream).pipe(client);
+    upstream.pipe(client);
+    if (this.stalled) client.pause();
+    else client.pipe(upstream);
   }
 }

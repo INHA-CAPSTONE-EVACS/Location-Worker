@@ -104,7 +104,7 @@ flowchart LR
    - 일시 오류 → ACK 하지 않음, 경고 로그
 6. `stop()`: 읽기 중단 → 진행 중 처리를 최대 `SHUTDOWN_DRAIN_TIMEOUT_MS`까지 기다림 → 못 끝낸 엔트리는 미ACK로 둠 → 타이머 해제 → 연결 종료 → 종료 코드 0.
 7. 실행 중 그룹 소실(NOGROUP): 읽기·회수 명령이 NOGROUP으로 실패하면 Worker는 그룹을 자동으로 다시 만들지 않는다. error 로그(마지막으로 처리한 엔트리 ID 포함)를 남기고, readiness를 503으로 보고하며, 읽기 루프는 `BLOCK_MS` 간격으로 계속 재시도한다(liveness는 200 유지, AC-LW-008). 그룹은 운영자가 다시 만들거나 Worker 재시작(REQ-LW-001, `$`)으로 복구된다. 이때 그룹이 없던 동안 기록된 엔트리와 사라진 대기 목록은 처리되지 않는다. 그룹 소실은 운영 사고이므로, 자동 복구로 조용히 넘기지 않고 readiness로 드러내는 쪽을 택했다.
-8. Redis 명령 시간 제한: 모든 명령에 `BLOCK_MS` + 1000 ms의 명령 시간 제한을 둔다(오프라인 대기열에서 무기한 머물지 않게). 읽기 루프는 명령이 성공하든 실패하든 반복할 때마다 heartbeat를 갱신하고, 실패하면 `BLOCK_MS`만큼 쉬고 다시 시도한다. 따라서 Redis가 끊겨도 루프가 살아 있으면 liveness는 200이다.
+8. Redis 명령 시간 제한: 모든 명령에 `BLOCK_MS` + 1000 ms의 명령 시간 제한을 둔다(오프라인 대기열에서 무기한 머물지 않게). 읽기 루프는 명령이 성공하든 실패하든 반복할 때마다 heartbeat를 갱신하고, 실패하면 `BLOCK_MS`만큼 쉬고 다시 시도한다. heartbeat는 liveness 기한을 정한다. 기본 기한은 3 × `BLOCK_MS`이고, 시간 제한이 걸린 Redis 명령 n개로 끝나는 단계(XREADGROUP 1개, 엔트리 처리 2개) 직전에는 max(3 × `BLOCK_MS`, n × 명령 시간 제한 + `BLOCK_MS`)로 늘린다. 따라서 Redis가 끊기거나 응답을 멈춰도 루프가 살아 있으면 liveness는 `BLOCK_MS` 값과 관계없이 200이고, 루프가 명령 밖에서 멈추면 3 × `BLOCK_MS` 뒤 503이다(sync-audit F1, 2026-11-03 run-phase 수정).
 
 consumer 이름 기본값은 `CONSUMER_NAME`(없으면 `HOSTNAME`, 그것도 없으면 `os.hostname()`)이다. 같은 이름으로 재시작하면 자기 대기 목록을 이어받는다. **동시에 도는 인스턴스는 서로 다른 consumer 이름을 가져야 한다.** 이름이 같으면 시작 회수의 `XCLAIM … 0`이 다른 인스턴스가 처리 중인 엔트리를 빼앗고 전달 횟수를 부풀린다. 호스트 이름이 겹치는 배포에서는 `CONSUMER_NAME`을 명시한다.
 
