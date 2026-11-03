@@ -69,7 +69,7 @@
 
 ```yaml
 run_complete_at: 2026-11-03
-run_commit_sha: pending-backfill (M2·M3 커밋 자신의 SHA는 같은 커밋에 넣을 수 없음, 이 커밋 직전 HEAD는 08ec3a1)
+run_commit_sha: db9fa38eeb05db92cdb4086686255000077621c9  # 마지막 구현 커밋(M2·M3). 후속 커밋에서 채움
 run_status: audit-ready
 ac_pass_count: 25
 ac_fail_count: 0
