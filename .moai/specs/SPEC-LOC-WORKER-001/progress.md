@@ -54,9 +54,36 @@
 - AC-LW-007 정적 검사 (1)·(2): 세 디렉터리가 모두 있는 상태에서 각각 0줄
 - RED 근거: 새 시험 파일 11개 모두 구현 전 실행에서 `TS2307: Cannot find module` 실패를 확인한 뒤 구현함
 
+### M2·M3 (2026-11-03, manager-develop, cycle_type=tdd, 실제 Redis)
+
+- 기준 트리: 시작 커밋 `08ec3a1`(M1b, main과 같음)
+- 구현: `RedisClock`(TIME, 주기 ID, 다음 경계 + 50 ms), `CycleClaim`(`SET … NX PX 2×간격`, 해제 없음), `CycleScheduler`(정리·밀도 공용 타이머), `cleanup-cell.lua`(ZSCORE 재확인 후 ZREM, h3CellId가 같을 때만 INACTIVE, 빈 셀 SREM), `ExpiredVehicleSweeper`(`sweepAt`), `EdgeCellTable`, `DensityCalculator`, `publish-density.lua`(generation 비교, 교체 시 세 키 DEL, 500쌍 단위 HSET, PEXPIRE), `DensityPublisher`, `DensityAggregator`(`aggregateAt`), readiness 본문의 `edgeDensity`
+- AC 상태: AC-LW-018~025 통과. 근거는 `npm --prefix services/location-worker run coverage -- --json` 결과(262건 통과, 실패 0)
+- 전체 시험: 23개 파일, 262건 통과. 커버리지 문장 97.27%, 분기 89.55%, 함수 98.43%, 줄 98.44%
+- 빌드·타입 검사·린트 종료 코드 0. `node dist/src/main.js`(유효 테이블, DENSITY_INTERVAL_MS=1000) 기동 → `/readyz` 200 `edgeDensity: enabled`, `density:meta` 게시 확인, SIGTERM → 종료 코드 0
+- AC-LW-007 정적 검사 (1)·(2) 각각 0줄, AskUserQuestion 검색 0줄, 시험 뒤 Redis `INFO keyspace` 빈 상태
+- RED 근거: 새 시험 파일 7개 모두 구현 전 `TS2307: Cannot find module` 실패 확인. 구현 중 발견한 결함(테이블의 `h3Resolution` 누락이 스키마 위반이 아니라 해상도 불일치로 보고됨)은 단위 시험 2건을 먼저 실패시킨 뒤 고침
+- design.md §5.3 예시 셀 ID를 h3-js 실측값으로 바꾸고, §5.4 N4-3 문구를 고침(orchestrator 지시, T-020)
+
 ## §E.3 Run-phase Audit-Ready Signal
 
-_<pending run-phase>_
+```yaml
+run_complete_at: 2026-11-03
+run_commit_sha: pending-backfill (M2·M3 커밋 자신의 SHA는 같은 커밋에 넣을 수 없음, 이 커밋 직전 HEAD는 08ec3a1)
+run_status: audit-ready
+ac_pass_count: 25
+ac_fail_count: 0
+preserve_list_post_run_count: 0  # services/location-worker/ 밖 변경은 SPEC 디렉터리의 허용 파일뿐
+l44_pre_commit_fetch: not-applicable (원격 저장소 없음)
+l44_post_push_fetch: not-applicable (push 없음)
+new_warnings_or_lints_introduced: 0
+cross_platform_build:
+  darwin: pass (node v26.13.0)
+  linux: not-verified
+  windows: not-verified
+total_run_phase_files: services/location-worker 아래 소스·설정·시험 전체 + SPEC 디렉터리의 tasks.md, progress.md, spec.md(상태만), design.md(§5.3·§5.4)
+m1_to_mN_commit_strategy: 마일스톤별 선형 커밋(6d1d94c M1a, f1f6554·08ec3a1 M1b, 이어서 M2·M3), worktree 브랜치에 쌓고 orchestrator가 main을 fast-forward
+```
 
 ## §E.4 Sync-phase Audit-Ready Signal
 

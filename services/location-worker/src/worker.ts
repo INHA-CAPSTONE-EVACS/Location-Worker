@@ -5,8 +5,15 @@ import {
   ConsumerFaults,
   LocationStreamConsumer,
 } from './consumer/location-stream-consumer';
+import {DensityAggregator} from './density/density-aggregator';
+import {DensityPublisher} from './density/density-publisher';
+import {loadEdgeCellTable} from './density/edge-cell-table';
 import {CONSUMER_GROUP, LOCATION_STREAM} from './domain/contracts';
 import {connectRedis, createRedisClient} from './infra/redis';
+import {RedisClock} from './infra/redis-clock';
+import {CycleClaim} from './maintenance/cycle-claim';
+import {CycleScheduler} from './maintenance/cycle-scheduler';
+import {ExpiredVehicleSweeper} from './maintenance/expired-vehicle-sweeper';
 import {HealthServer, Readiness} from './ops/health-server';
 import {createLogger, Logger} from './ops/logger';
 import {Metrics} from './ops/metrics';
@@ -57,18 +64,57 @@ export async function createWorker(
       metrics,
       faults: options.faults,
     });
+
+    const table = await loadEdgeCellTable(
+      config.edgeCellTablePath,
+      config.h3Resolution,
+    );
+    if (!table.ok) {
+      // 엣지 밀도만 끄고 셀 수 게시와 위치 처리는 계속한다(REQ-LW-025)
+      logger.error('edge density disabled', {
+        reason: table.reason,
+        path: config.edgeCellTablePath,
+      });
+    }
+    const aggregator = new DensityAggregator(
+      redis,
+      await DensityPublisher.create(redis),
+      {...config, table},
+    );
+    const sweeper = await ExpiredVehicleSweeper.create(redis, config);
+    const clock = new RedisClock(redis);
+    const claim = new CycleClaim(redis, config.instanceId);
+    const schedulerBase = {clock, claim, instanceId: config.instanceId, logger};
+    const schedulers = [
+      new CycleScheduler({
+        ...schedulerBase,
+        job: 'sweeper',
+        intervalMs: config.cleanupIntervalMs,
+        run: now => sweeper.sweepAt(now),
+      }),
+      new CycleScheduler({
+        ...schedulerBase,
+        job: 'density',
+        intervalMs: config.densityIntervalMs,
+        run: now => aggregator.aggregateAt(now),
+      }),
+    ];
+
     const health = new HealthServer({
       isLive: () => consumer.isLive(),
-      readiness: () => readiness(redis, metrics),
+      readiness: () =>
+        readiness(redis, metrics, aggregator.edgeDensityStatus()),
     });
     let port = 0;
     return {
       async start() {
         await consumer.start();
+        for (const s of schedulers) s.start();
         port = await health.listen(options.healthPort ?? config.healthPort);
       },
       async stop() {
         const result = await consumer.stop(config.shutdownDrainTimeoutMs);
+        await Promise.all(schedulers.map(s => s.stop()));
         await health.close();
         redis.disconnect();
         reader.disconnect();
@@ -83,13 +129,17 @@ export async function createWorker(
   }
 }
 
-/** Redis PING 성공 + 그룹 존재 → ready. 엣지 밀도 상태는 M3에서 더한다. */
-async function readiness(redis: Redis, metrics: Metrics): Promise<Readiness> {
-  const outcomes = metrics.snapshot();
+/** Redis PING 성공 + 그룹 존재 → ready. 엣지 밀도 상태는 상세로만 보고한다(REQ-LW-025). */
+async function readiness(
+  redis: Redis,
+  metrics: Metrics,
+  edgeDensity: string,
+): Promise<Readiness> {
+  const detail = {outcomes: metrics.snapshot(), edgeDensity};
   try {
     await redis.ping();
   } catch {
-    return {ready: false, redis: false, group: false, outcomes};
+    return {ready: false, redis: false, group: false, ...detail};
   }
   try {
     const groups = (await redis.xinfo(
@@ -97,11 +147,11 @@ async function readiness(redis: Redis, metrics: Metrics): Promise<Readiness> {
       LOCATION_STREAM,
     )) as unknown[][];
     const group = groups.find(g => g[1] === CONSUMER_GROUP);
-    if (!group) return {ready: false, redis: true, group: false, outcomes};
+    if (!group) return {ready: false, redis: true, group: false, ...detail};
     const pending = Number(group[group.indexOf('pending') + 1]);
-    return {ready: true, redis: true, group: true, pending, outcomes};
+    return {ready: true, redis: true, group: true, pending, ...detail};
   } catch {
     // 스트림 키가 없으면 XINFO가 오류를 낸다
-    return {ready: false, redis: true, group: false, outcomes};
+    return {ready: false, redis: true, group: false, ...detail};
   }
 }

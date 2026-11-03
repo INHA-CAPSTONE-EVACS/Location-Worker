@@ -142,10 +142,12 @@ consumer 이름 기본값은 `CONSUMER_NAME`(없으면 `HOSTNAME`, 그것도 없
   "source": "sumo-net",
   "generatedAt": "2026-11-02T00:00:00.000Z",
   "edges": {
-    "EDGE-101": { "lengthM": 400, "lanes": 2, "cells": { "892a100d2c3ffff": 300, "892a100d2c7ffff": 100 } }
+    "EDGE-101": { "lengthM": 400, "lanes": 2, "cells": { "8930e0a845bffff": 300, "8930e1d8c0bffff": 100 } }
   }
 }
 ```
+
+예시 셀 ID는 h3-js 4.5.0 `latLngToCell`로 계산한 Res 9 값이다. `8930e0a845bffff`는 (37.4501, 126.6532), `8930e1d8c0bffff`는 (37.5665, 126.9780)의 셀이다. 처음 적었던 `892a100d2c3ffff`·`892a100d2c7ffff`는 유효한 Res 9 셀이지만 중심이 뉴욕(약 40.75, -73.99)이어서 바꿨다(run-phase M1a 확인, 2026-11-03).
 
 - 검증: schemaVersion = 1, h3Resolution = `H3_RESOLUTION`, lanes ≥ 1, lengthM > 0, 셀 ID 유효, 셀 안 길이 > 0, 엣지 ID가 `_`로 시작하지 않음(`_generation` 필드와 충돌 방지).
 - 셀 c 안 엣지 e의 가중치 w(e,c) = cells[c] × lanes(e) (D-ALLOC, 추가 규칙)
@@ -159,7 +161,7 @@ consumer 이름 기본값은 `CONSUMER_NAME`(없으면 `HOSTNAME`, 그것도 없
 
 - KEYS = [`density:cells`, `density:edges`, `density:meta`]. ARGV = generation, expiryMs, 셀 수 쌍 목록, 엣지 밀도 활성 여부, 엣지 값 쌍 목록, meta 필드.
 - 새 generation이 `density:meta`에 저장된 generation 이하이면(저장된 값이 있을 때) 아무것도 바꾸지 않고 `SKIPPED_STALE_GENERATION`을 반환한다. 저장된 값이 없거나 새 generation이 더 크면 교체한다(REQ-LW-024, D-PUB).
-- 아니면 세 키를 DEL 한 뒤, cells에 셀 수와 `_generation`, edges에 엣지 값과 `_generation`(비활성이면 생략해 키 없음), meta에 필드를 HSET 하고, 세 키 모두 PEXPIRE expiryMs.
+- 교체할 때는 세 키를 DEL 한 뒤, cells에 셀 수와 `_generation`, edges에 엣지 값과 `_generation`(비활성이면 생략해 키 없음), meta에 필드를 HSET 하고, 세 키 모두 PEXPIRE expiryMs.
 - HSET은 스크립트 안에서 500쌍 단위로 나눠 호출한다. Lua의 `unpack` 인자 수 제한(Redis 내장 Lua 5.1에서 수천 개 수준으로 알려져 있으나 확인하지 않음)에 걸리지 않게 하기 위해서다. 도시 규모 SUMO 네트워크는 엣지가 수만 개에 이를 수 있다. 시험 전략에 엣지 10,000개 fixture 게시 시험을 둔다(plan.md §F.1).
 - 임시 키를 쓰지 않으므로 임시 키 누수가 없다. 셀이 하나도 없으면 cells에는 `_generation`만 들어간다.
 

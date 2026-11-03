@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "h3Resolution": 9,
+  "source": "sumo-net",
+  "generatedAt": "2026-11-02T00:00:00.000Z",
+  "edges": {
+    "e1": {
+      "lengthM": 400,
+      "lanes": 2,
+      "cells": {"8930e0a845bffff": 300, "8930e1d8c0bffff": 100}
+    },
+    "e2": {
+      "lengthM": 200,
+      "lanes": 1,
+      "cells": {"8930e0a845bffff": 200}
+    }
+  }
+}
