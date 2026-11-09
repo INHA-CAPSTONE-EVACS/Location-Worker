@@ -8,7 +8,7 @@ services:
     init: true
     environment:
       NODE_ENV: production
-      REDIS_URL: ${CENTRAL_REDIS_URL:?Set CENTRAL_REDIS_URL in .env}
+      REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env}
       CONSUMER_NAME: ${WORKER_CONSUMER_NAME:?Set a unique worker consumer name}
       INSTANCE_ID: ${WORKER_INSTANCE_ID:?Set a unique worker instance ID}
       HEALTH_PORT: "8080"
