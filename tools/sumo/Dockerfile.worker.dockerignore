@@ -1,0 +1,6 @@
+.git
+.superpowers
+tmp
+services/location-worker/node_modules
+services/location-worker/dist
+services/location-worker/coverage

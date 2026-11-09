@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Songdo Autonomous Traffic</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main>
+      <section id="map" aria-label="송도 교통 시뮬레이션 지도"></section>
+      <section class="title-card">
+        <p class="eyebrow">LOCATION WORKER · LIVE</p>
+        <h1>Songdo Autonomous Traffic</h1>
+        <p id="connection" class="connection">연결 중…</p>
+      </section>
+      <aside class="panel" aria-label="시뮬레이션 상태">
+        <div class="panel-header">
+          <div><p class="eyebrow">REAL-TIME OPERATIONS</p><h2>시뮬레이션 상태</h2></div>
+          <span id="worker-pill" class="pill">확인 중</span>
+        </div>
+        <div class="metric-grid">
+          <div><span>활성 차량</span><strong id="active-vehicles">–</strong></div>
+          <div><span>마지막 밀도 갱신</span><strong id="generation">–</strong></div>
+          <div><span>위치 이벤트</span><strong id="stream-length">–</strong></div>
+          <div><span>현재 H3 해상도</span><strong id="h3-resolution">–</strong></div>
+        </div>
+        <div class="layer-controls">
+          <label class="toggle"><input id="cell-toggle" type="checkbox"> <span>H3 셀 레이어 표시</span></label>
+          <label class="resolution-label" for="cell-resolution">표시 해상도
+            <select id="cell-resolution" disabled></select>
+          </label>
+          <p id="cell-help">Worker 원본 해상도를 확인 중입니다.</p>
+        </div>
+        <div class="legend">
+          <p>도로 밀도 · 차량/km/차로</p>
+          <div><i class="density-low"></i>원활 <i class="density-mid"></i>주의 <i class="density-high"></i>혼잡</div>
+          <div><i class="vehicle-normal"></i>일반 차량 <i class="vehicle-emergency"></i>긴급 차량</div>
+        </div>
+        <dl class="worker-details">
+          <div><dt>Worker readiness</dt><dd id="worker-ready">–</dd></div>
+          <div><dt>마지막 스냅샷</dt><dd id="updated-at">–</dd></div>
+        </dl>
+      </aside>
+      <p class="attribution">도로 형상: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a> · 교통 상태: SUMO / Location Worker</p>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

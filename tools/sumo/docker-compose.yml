@@ -1,0 +1,186 @@
+services:
+  redis:
+    image: redis:7.4.7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -qx PONG"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  location-worker:
+    build:
+      context: ../..
+      dockerfile: tools/sumo/Dockerfile.worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      CONSUMER_NAME: sumo-location-worker
+      INSTANCE_ID: sumo-location-worker-1
+      HEALTH_PORT: "8080"
+      DENSITY_INTERVAL_MS: "1000"
+      CLEANUP_INTERVAL_MS: "1000"
+      INACTIVE_TTL_MS: "5000"
+      EDGE_CELL_TABLE_PATH: /workspace/edge-cell-table.json
+    volumes:
+      - ./edge-cell-table.json:/workspace/edge-cell-table.json:ro
+    ports:
+      - "18080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/readyz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  sumo-bridge:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.adapter
+    environment:
+      REDIS_URL: redis://redis:6379
+      WORKER_READY_URL: http://location-worker:8080/readyz
+      SUMO_CONFIG: /app/scenario/mini.sumocfg
+    depends_on:
+      redis:
+        condition: service_healthy
+      location-worker:
+        condition: service_healthy
+
+  sumo-gui:
+    profiles: ["gui"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.gui
+    ports:
+      - "6080:6080"
+
+  songdo-location-worker:
+    profiles: ["songdo", "songdo-live", "dashboard"]
+    build:
+      context: ../..
+      dockerfile: tools/sumo/Dockerfile.worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      CONSUMER_NAME: songdo-location-worker
+      INSTANCE_ID: songdo-location-worker-1
+      HEALTH_PORT: "8080"
+      DENSITY_INTERVAL_MS: "1000"
+      CLEANUP_INTERVAL_MS: "1000"
+      INACTIVE_TTL_MS: "5000"
+      EDGE_CELL_TABLE_PATH: /workspace/edge-cell-table.json
+    volumes:
+      - ./scenario/songdo/edge-cell-table.json:/workspace/edge-cell-table.json:ro
+    ports:
+      - "28080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  songdo-bridge:
+    profiles: ["songdo"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.adapter
+    environment:
+      REDIS_URL: redis://redis:6379
+      WORKER_READY_URL: http://songdo-location-worker:8080/readyz
+      SUMO_CONFIG: /app/scenario/songdo/songdo.sumocfg
+      WALL_CLOCK_STEP_SECONDS: "0.01"
+    depends_on:
+      redis:
+        condition: service_healthy
+      songdo-location-worker:
+        condition: service_started
+  songdo-gui:
+    profiles: ["songdo-gui"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.gui
+    environment:
+      SUMO_CONFIG: /app/scenario/songdo/songdo.sumocfg
+    ports:
+      - "6081:6080"
+
+  songdo-live-gui:
+    profiles: ["songdo-live"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.gui
+    environment:
+      SUMO_CONFIG: /app/scenario/songdo/songdo.sumocfg
+      TRACI_PORT: "8873"
+      SUMO_DELAY_MS: "100"
+    ports:
+      - "6081:6080"
+
+  songdo-live-bridge:
+    profiles: ["songdo-live"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.adapter
+    environment:
+      REDIS_URL: redis://redis:6379
+      WORKER_READY_URL: http://songdo-location-worker:8080/readyz
+      SUMO_CONFIG: /app/scenario/songdo/songdo.sumocfg
+      TRACI_HOST: songdo-live-gui
+      TRACI_PORT: "8873"
+      WALL_CLOCK_STEP_SECONDS: "0.1"
+    depends_on:
+      redis:
+        condition: service_healthy
+      songdo-location-worker:
+        condition: service_started
+      songdo-live-gui:
+        condition: service_started
+
+  songdo-dashboard-bridge:
+    profiles: ["dashboard"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.adapter
+    environment:
+      REDIS_URL: redis://redis:6379
+      WORKER_READY_URL: http://songdo-location-worker:8080/readyz
+      SUMO_CONFIG: /app/scenario/songdo/songdo.sumocfg
+      WALL_CLOCK_STEP_SECONDS: "0.1"
+      LOOP_SIMULATION: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      songdo-location-worker:
+        condition: service_started
+
+  songdo-dashboard:
+    profiles: ["dashboard"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      REDIS_URL: redis://redis:6379
+      WORKER_READY_URL: http://songdo-location-worker:8080/readyz
+    volumes:
+      - ./scenario/songdo/dashboard-map.json:/app/dashboard/static/dashboard-map.json:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      songdo-location-worker:
+        condition: service_started

@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes><vType id="normal" vClass="passenger" accel="2.4" decel="4.5" maxSpeed="13.89" tau="1.2" sigma="0.5" speedFactor="normc(1,0.1,0.8,1.2)" /><vType id="emergency" vClass="emergency" accel="3.0" decel="5.0" maxSpeed="19.44" tau="0.8" sigma="0.3" guiShape="emergency" color="1,0,0" /><vehicle id="emergency_0" type="emergency" depart="0.00">
+        <route edges="317091483#2 -317091483#2" />
+    </vehicle>
+    <vehicle id="normal_0" type="normal" depart="0.00">
+        <route edges="-314752444#4 -314752444#3 -317091483#3 -317091483#2 -317091482" />
+    </vehicle>
+    <vehicle id="normal_1" type="normal" depart="10.00">
+        <route edges="-317091483#2 317091483#2 317091483#3 317091483#4 600968886#1" />
+    </vehicle>
+    <vehicle id="normal_2" type="normal" depart="20.00">
+        <route edges="317091485#0 317091488#1 317091483#1 317091483#2 317091483#3 -314752444#2" />
+    </vehicle>
+    <vehicle id="normal_3" type="normal" depart="30.00">
+        <route edges="-317091484#0 -317091481#1 -314752444#3 317091483#4" />
+    </vehicle>
+    <vehicle id="normal_4" type="normal" depart="40.00">
+        <route edges="317091483#0 317091483#1 317091483#2 317091483#3 314752444#3 -317091481#0" />
+    </vehicle>
+    <vehicle id="normal_5" type="normal" depart="50.00">
+        <route edges="1312045069#0 -317091488#2 -317091483#0" />
+    </vehicle>
+    <vehicle id="normal_6" type="normal" depart="60.00">
+        <route edges="317091481#1 317091481#2 317091482 -317091483#1 -317091483#0" />
+    </vehicle>
+    <vehicle id="normal_7" type="normal" depart="70.00">
+        <route edges="-317091485#3 -317091484#1 -317091484#0 317091484#0" />
+    </vehicle>
+    <vehicle id="normal_8" type="normal" depart="80.00">
+        <route edges="-317091485#4 -317091485#3 317091486" />
+    </vehicle>
+    <vehicle id="normal_9" type="normal" depart="90.00">
+        <route edges="-317091484#0 -317091481#1 -317091481#0" />
+    </vehicle>
+    <vehicle id="normal_10" type="normal" depart="100.00">
+        <route edges="-314752444#3 -317091483#3 -317091483#2" />
+    </vehicle>
+    <vehicle id="normal_11" type="normal" depart="110.00">
+        <route edges="1312045070#0 -317091481#2 -317091481#1 -317091481#0" />
+    </vehicle>
+    <vehicle id="normal_12" type="normal" depart="120.00">
+        <route edges="-317091486 -317091484#1 -317091484#0 -317091481#1 -314752444#3" />
+    </vehicle>
+    <vehicle id="normal_13" type="normal" depart="130.00">
+        <route edges="-317091481#1 -314752444#3 -314752444#2 -317091485#3 -317091485#2 -317091485#1 317091485#1" />
+    </vehicle>
+    <vehicle id="normal_14" type="normal" depart="140.00">
+        <route edges="317091479#0 600968886#1" />
+    </vehicle>
+    <vehicle id="normal_15" type="normal" depart="150.00">
+        <route edges="-1312045070#1 429774073#0 -314752444#4 -317091481#0" />
+    </vehicle>
+    <vehicle id="normal_16" type="normal" depart="160.00">
+        <route edges="-317091483#3 -317091484#0 317091484#0" />
+    </vehicle>
+    <vehicle id="normal_17" type="normal" depart="170.00">
+        <route edges="-317091483#4 314752444#3 314752444#4 310801002#1 1312045070#0" />
+    </vehicle>
+    <vehicle id="normal_18" type="normal" depart="180.00">
+        <route edges="429774073#0" />
+    </vehicle>
+    <vehicle id="normal_19" type="normal" depart="190.00">
+        <route edges="317091488#1 317091483#1 317091483#2 317091484#1 317091485#3" />
+    </vehicle>
+    <vehicle id="normal_20" type="normal" depart="200.00">
+        <route edges="-317091482 1312045069#0 -317091488#2 -317091488#1 317091485#1 317091485#2" />
+    </vehicle>
+    <vehicle id="normal_21" type="normal" depart="210.00">
+        <route edges="317091485#1 317091485#2 -317091484#1 -317091484#0 -317091481#1" />
+    </vehicle>
+    <vehicle id="normal_22" type="normal" depart="220.00">
+        <route edges="310801002#1 1312045070#0 317091482 317091483#2" />
+    </vehicle>
+    <vehicle id="normal_23" type="normal" depart="230.00">
+        <route edges="-317091481#0 317091479#0 317091479#1 -317091485#4 314752444#1" />
+    </vehicle>
+    <vehicle id="normal_24" type="normal" depart="240.00">
+        <route edges="317091479#1 -317091485#4 314752444#1 314752444#3 314752444#4 310801002#1 429774073#0" />
+    </vehicle>
+    <vehicle id="normal_25" type="normal" depart="250.00">
+        <route edges="-317091481#1 317091481#1 317091481#2" />
+    </vehicle>
+    <vehicle id="normal_26" type="normal" depart="260.00">
+        <route edges="317091485#4 317091485#5 -317091485#5 -317091485#4 -317091485#3 317091485#3" />
+    </vehicle>
+    <vehicle id="normal_27" type="normal" depart="270.00">
+        <route edges="-317091483#3 -317091483#2 -317091482 -1312045070#1 429774073#0" />
+    </vehicle>
+    <vehicle id="normal_28" type="normal" depart="280.00">
+        <route edges="-317091488#2 317091483#1 317091483#2 317091484#1 317091485#3 317091485#4 317091485#5 600968886#0" />
+    </vehicle>
+    <vehicle id="normal_29" type="normal" depart="290.00">
+        <route edges="-317091484#0 317091484#0 317091484#1 317091486" />
+    </vehicle>
+    <vehicle id="emergency_1" type="emergency" depart="300.00">
+        <route edges="-317091486 317091485#3 314752444#1 317091483#4 317091479#1" />
+    </vehicle>
+<vehicle id="normal_30" type="normal" depart="300.00">
+        <route edges="317091485#3 314752444#1 314752444#3 317091481#1" />
+    </vehicle>
+    <vehicle id="normal_31" type="normal" depart="310.00">
+        <route edges="317091483#2 317091483#3 314752444#3 314752444#4" />
+    </vehicle>
+    <vehicle id="normal_32" type="normal" depart="320.00">
+        <route edges="317091488#0 317091488#1 317091483#1 317091483#2 317091483#3" />
+    </vehicle>
+    <vehicle id="normal_33" type="normal" depart="330.00">
+        <route edges="314752444#4 310801002#1 1312045070#0 1312045069#0 -317091488#2" />
+    </vehicle>
+    <vehicle id="normal_34" type="normal" depart="340.00">
+        <route edges="-317091484#0 -317091481#1 -314752444#3" />
+    </vehicle>
+    <vehicle id="normal_35" type="normal" depart="350.00">
+        <route edges="317091482 317091483#2 317091483#3 314752444#3" />
+    </vehicle>
+    <vehicle id="normal_36" type="normal" depart="360.00">
+        <route edges="-314752444#4 317091481#1 -317091481#1" />
+    </vehicle>
+    <vehicle id="normal_37" type="normal" depart="370.00">
+        <route edges="317091483#1 317091483#2 317091483#3 317091483#4 317091479#1" />
+    </vehicle>
+    <vehicle id="normal_38" type="normal" depart="380.00">
+        <route edges="317091485#0 317091488#1 317091483#1" />
+    </vehicle>
+    <vehicle id="normal_39" type="normal" depart="390.00">
+        <route edges="-314752444#2 -317091485#3 -317091485#2 -317091485#1" />
+    </vehicle>
+    <vehicle id="normal_40" type="normal" depart="400.00">
+        <route edges="-317091486 317091485#3 314752444#1 314752444#3" />
+    </vehicle>
+    <vehicle id="normal_41" type="normal" depart="410.00">
+        <route edges="-317091485#1 317091485#1 317091485#2 317091485#3" />
+    </vehicle>
+    <vehicle id="normal_42" type="normal" depart="420.00">
+        <route edges="317091488#2 -1312045069#1 -317091481#2 317091484#0 317091484#1 -317091485#2" />
+    </vehicle>
+    <vehicle id="normal_43" type="normal" depart="430.00">
+        <route edges="310801002#0 -314752444#4 -314752444#3 -317091483#3 -317091484#0" />
+    </vehicle>
+    <vehicle id="normal_44" type="normal" depart="440.00">
+        <route edges="-317091484#1 317091483#3 -314752444#2 317091485#4 317091485#5 600968886#0" />
+    </vehicle>
+    <vehicle id="normal_45" type="normal" depart="450.00">
+        <route edges="-317091485#5 -317091485#4 -317091485#3 -317091484#1 -317091484#0 317091484#0" />
+    </vehicle>
+    <vehicle id="normal_46" type="normal" depart="460.00">
+        <route edges="314752444#0 317091485#4 317091485#5" />
+    </vehicle>
+    <vehicle id="normal_47" type="normal" depart="470.00">
+        <route edges="317091488#0 317091485#1 317091485#2 -317091484#1 -317091484#0" />
+    </vehicle>
+    <vehicle id="normal_48" type="normal" depart="480.00">
+        <route edges="-317091483#1 -317091488#1 317091485#1 317091485#2 317091485#3" />
+    </vehicle>
+    <vehicle id="normal_49" type="normal" depart="490.00">
+        <route edges="-317091488#1 317091485#1 317091487" />
+    </vehicle>
+    <vehicle id="normal_50" type="normal" depart="500.00">
+        <route edges="317091482 -317091483#1 317091488#2 -1312045069#1" />
+    </vehicle>
+    <vehicle id="normal_51" type="normal" depart="510.00">
+        <route edges="-317091483#2 -317091482 -1312045070#1 429774073#0 429774073#2" />
+    </vehicle>
+    <vehicle id="normal_52" type="normal" depart="520.00">
+        <route edges="317091488#1 317091488#2 -1312045069#1 -317091481#2 317091484#0" />
+    </vehicle>
+    <vehicle id="normal_53" type="normal" depart="530.00">
+        <route edges="317091479#1 -317091485#4 -317091485#3 -317091485#2 -317091485#1 317091485#1" />
+    </vehicle>
+    <vehicle id="normal_54" type="normal" depart="540.00">
+        <route edges="-317091483#4 317091483#4 600968886#1" />
+    </vehicle>
+    <vehicle id="normal_55" type="normal" depart="550.00">
+        <route edges="317091482 -317091483#1 -317091488#1" />
+    </vehicle>
+    <vehicle id="normal_56" type="normal" depart="560.00">
+        <route edges="-317091483#2 317091483#2 317091484#1 317091485#3 317091485#4 317091485#5 600968886#0" />
+    </vehicle>
+    <vehicle id="normal_57" type="normal" depart="570.00">
+        <route edges="-317091487 317091485#2" />
+    </vehicle>
+    <vehicle id="normal_58" type="normal" depart="580.00">
+        <route edges="-317091487 317091485#2 317091485#3 317091485#4 317091479#2" />
+    </vehicle>
+    <vehicle id="normal_59" type="normal" depart="590.00">
+        <route edges="317091479#0 -317091483#4 314752444#3" />
+    </vehicle>
+</routes>

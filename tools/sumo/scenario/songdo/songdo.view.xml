@@ -1,0 +1,18 @@
+<viewsettings>
+  <scheme name="location-worker-live">
+    <vehicles vehicleMode="0" vehicleTextParam="gui.label"
+      vehicleText_show="1" vehicleText_size="70.00"
+      vehicleText_color="0,0,0" vehicleText_bgColor="180,255,255,255"
+      vehicleText_constantSize="1" vehicleText_onlySelected="0">
+      <colorScheme name="given vehicle/type/route color">
+        <entry color="0.20,0.60,0.86"/>
+      </colorScheme>
+    </vehicles>
+    <pois poiName_show="0" poiName_size="50.00"
+      poiName_color="0,0,0" poiName_bgColor="220,255,255,255"
+      poiName_constantSize="1" poiName_onlySelected="0"
+      poiType_show="1" poiType_size="40.00"
+      poiType_color="0,0,0" poiType_bgColor="220,255,255,255"
+      poiType_constantSize="1" poiType_onlySelected="0"/>
+  </scheme>
+</viewsettings>

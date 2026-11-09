@@ -13,6 +13,10 @@ const FIXTURE_PATH = path.join(
   'fixtures',
   'edge-cell-table.fixture.json',
 );
+const SIMULATION_TABLE_PATH = path.resolve(
+  __dirname,
+  '../../../../tools/sumo/edge-cell-table.json',
+);
 const C1 = '8930e0a845bffff';
 const C2 = '8930e1d8c0bffff';
 
@@ -112,6 +116,12 @@ describe('loadEdgeCellTable', () => {
 
   it('fixture 파일을 읽는다', async () => {
     const result = await loadEdgeCellTable(FIXTURE_PATH, 9);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('SUMO 간이 시나리오의 Res 9 엣지-셀 테이블을 읽는다', async () => {
+    const result = await loadEdgeCellTable(SIMULATION_TABLE_PATH, 9);
 
     expect(result.ok).toBe(true);
   });
