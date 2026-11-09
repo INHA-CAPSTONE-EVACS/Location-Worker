@@ -1,0 +1,46 @@
+services:
+  redis:
+    image: redis:7.4.7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${CENTRAL_REDIS_PASSWORD:?Set CENTRAL_REDIS_PASSWORD in .env}
+    ports:
+      - "${REDIS_BIND_ADDRESS:?Set the central EC2 private IP}:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -qx PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    environment:
+      REDIS_PASSWORD: ${CENTRAL_REDIS_PASSWORD:?Set CENTRAL_REDIS_PASSWORD in .env}
+    networks: [central]
+
+  websocket-gateway:
+    image: ${WEBSOCKET_LOCAL_IMAGE:-evacs-ws-gateway:local}
+    build:
+      context: ${WEBSOCKET_BUILD_CONTEXT:?Set WEBSOCKET_BUILD_CONTEXT in .env}
+      dockerfile: ${WEBSOCKET_DOCKERFILE:-Dockerfile}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://:${CENTRAL_REDIS_PASSWORD:?Set CENTRAL_REDIS_PASSWORD in .env}@redis:6379/0
+      PORT: ${WS_CONTAINER_PORT:-8080}
+    ports:
+      - "${WS_BIND_ADDRESS:?Set the WebSocket listener address}:${WS_PORT:-8080}:${WS_CONTAINER_PORT:-8080}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [central]
+
+networks:
+  central:
+    driver: bridge
+
+volumes:
+  redis-data:

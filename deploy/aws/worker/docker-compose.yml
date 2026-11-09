@@ -1,0 +1,26 @@
+services:
+  location-worker:
+    image: ${LOCATION_WORKER_LOCAL_IMAGE:-evacs-location-worker:local}
+    build:
+      context: ../../..
+      dockerfile: deploy/aws/worker/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      REDIS_URL: ${CENTRAL_REDIS_URL:?Set CENTRAL_REDIS_URL in .env}
+      CONSUMER_NAME: ${WORKER_CONSUMER_NAME:?Set a unique worker consumer name}
+      INSTANCE_ID: ${WORKER_INSTANCE_ID:?Set a unique worker instance ID}
+      HEALTH_PORT: "8080"
+      H3_RESOLUTION: ${H3_RESOLUTION:-9}
+      DENSITY_INTERVAL_MS: ${DENSITY_INTERVAL_MS:-1000}
+      CLEANUP_INTERVAL_MS: ${CLEANUP_INTERVAL_MS:-1000}
+      INACTIVE_TTL_MS: ${INACTIVE_TTL_MS:-5000}
+      EDGE_CELL_TABLE_PATH: /app/edge-cell-table.json
+    volumes:
+      - ./edge-cell-table.json:/app/edge-cell-table.json:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/readyz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 6

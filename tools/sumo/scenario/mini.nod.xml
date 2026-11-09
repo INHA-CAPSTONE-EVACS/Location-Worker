@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<nodes>
-  <node id="west" x="126.6500" y="37.4501" type="priority"/>
-  <node id="center-west" x="126.6520" y="37.4501" type="priority"/>
-  <node id="center-east" x="126.6540" y="37.4501" type="priority"/>
-  <node id="east" x="126.6560" y="37.4501" type="priority"/>
-</nodes>

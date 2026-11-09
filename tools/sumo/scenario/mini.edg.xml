@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<edges>
-  <edge id="west_to_center_west" from="west" to="center-west" numLanes="2" speed="13.89"/>
-  <edge id="center_west_to_center_east" from="center-west" to="center-east" numLanes="2" speed="13.89"/>
-  <edge id="center_east_to_east" from="center-east" to="east" numLanes="2" speed="13.89"/>
-  <edge id="east_to_center_east" from="east" to="center-east" numLanes="2" speed="13.89"/>
-  <edge id="center_east_to_center_west" from="center-east" to="center-west" numLanes="2" speed="13.89"/>
-  <edge id="center_west_to_west" from="center-west" to="west" numLanes="2" speed="13.89"/>
-</edges>
