@@ -53,6 +53,27 @@ export function liveEvent(o: LocationOverrides = {}) {
   return locationEvent({measuredAtMs: Date.now() - 1000, ...o});
 }
 
-export function eventFields(event: unknown): string[] {
-  return ['event', JSON.stringify(event)];
+export function eventFields(event: VehicleLocationUpdatedEvent): string[] {
+  const {payload} = event;
+  return [
+    'eventId',
+    event.eventId,
+    'payload',
+    JSON.stringify({
+      eventId: event.eventId,
+      vehicleId: payload.vehicleId,
+      vehicleType: payload.vehicleType,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      speedMps: payload.speedMps,
+      headingDegrees: payload.headingDegrees,
+      laneIndex: payload.lane.laneIndex,
+      laneCount: payload.lane.laneCount,
+      measuredAt: payload.measuredAt,
+      sequence: payload.sequence,
+      occurredAt: event.occurredAt,
+    }),
+    'vehicleId',
+    payload.vehicleId,
+  ];
 }

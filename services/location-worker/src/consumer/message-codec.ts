@@ -1,6 +1,9 @@
 import {
   EVENT_FIELD,
+  LOCATION_EVENT_ID_FIELD,
   LOCATION_EVENT_TYPE,
+  LOCATION_EVENT_PRODUCER,
+  LOCATION_PAYLOAD_FIELD,
   LOCATION_SCHEMA_VERSION,
   VEHICLE_TYPES,
   VehicleLocationUpdatedEvent,
@@ -66,7 +69,7 @@ export function ingestMsFromEntryId(entryId: string): number {
 
 /**
  * Stream 엔트리의 필드 목록(`[name, value, ...]`)을 위치 이벤트로 해석·검증한다.
- * 순수 함수다. 입력 producer는 존재만 확인하고 값으로 분기하지 않는다(REQ-LW-007).
+ * Gateway의 `payload` 형식과 이전 `event` 봉투 형식을 모두 수용한다.
  */
 // @MX:TODO: [AUTO] 단일 `event` 필드 인코딩(C6)과 수신 시각 = 엔트리 ID 시각(C3)은 Gateway 담당 확인 전이다
 // @MX:SPEC: SPEC-LOC-WORKER-001 REQ-LW-005, REQ-LW-018
@@ -102,26 +105,42 @@ export function decodeLocationEntry(
 function parseEnvelope(
   fields: readonly string[],
 ): JsonObject & {payload: JsonObject} {
-  let raw: string | undefined;
-  for (let i = 0; i + 1 < fields.length; i += 2) {
-    if (fields[i] === EVENT_FIELD) {
-      raw = fields[i + 1];
-      break;
-    }
-  }
-  if (raw === undefined) {
-    throw new Invalid('MISSING_EVENT_FIELD', `no "${EVENT_FIELD}" field`);
+  const raw = fieldValue(fields, EVENT_FIELD);
+  if (raw !== undefined) return parseEventEnvelope(raw);
+
+  const gatewayPayload = fieldValue(fields, LOCATION_PAYLOAD_FIELD);
+  if (gatewayPayload === undefined) {
+    throw new Invalid(
+      'MISSING_EVENT_FIELD',
+      `no "${EVENT_FIELD}" or "${LOCATION_PAYLOAD_FIELD}" field`,
+    );
   }
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Invalid('INVALID_JSON', `"${EVENT_FIELD}" is not valid JSON`);
+  const payload = parseJsonObject(gatewayPayload, LOCATION_PAYLOAD_FIELD);
+  const eventId = fieldValue(fields, LOCATION_EVENT_ID_FIELD);
+  if (eventId === undefined || eventId === '') {
+    throw new Invalid('MISSING_FIELD', `missing ${LOCATION_EVENT_ID_FIELD}`);
   }
-  if (!isObject(parsed)) {
-    throw new Invalid('INVALID_ENVELOPE', 'envelope is not a JSON object');
-  }
+  const occurredAt = requireString(payload, 'occurredAt', 'payload.occurredAt');
+
+  return {
+    eventId,
+    eventType: LOCATION_EVENT_TYPE,
+    schemaVersion: LOCATION_SCHEMA_VERSION,
+    occurredAt,
+    producer: LOCATION_EVENT_PRODUCER,
+    payload: {
+      ...payload,
+      lane: {
+        laneIndex: payload.laneIndex,
+        laneCount: payload.laneCount,
+      },
+    },
+  };
+}
+
+function parseEventEnvelope(raw: string): JsonObject & {payload: JsonObject} {
+  const parsed = parseJsonObject(raw, EVENT_FIELD);
 
   if (parsed.eventType === undefined || parsed.eventType === null) {
     throw new Invalid('MISSING_FIELD', 'missing eventType');
@@ -151,6 +170,29 @@ function parseEnvelope(
     throw new Invalid('INVALID_ENVELOPE', 'payload is not a JSON object');
   }
   return parsed as JsonObject & {payload: JsonObject};
+}
+
+function parseJsonObject(raw: string, field: string): JsonObject {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Invalid('INVALID_JSON', `"${field}" is not valid JSON`);
+  }
+  if (!isObject(parsed)) {
+    throw new Invalid('INVALID_ENVELOPE', 'envelope is not a JSON object');
+  }
+  return parsed;
+}
+
+function fieldValue(
+  fields: readonly string[],
+  name: string,
+): string | undefined {
+  for (let i = 0; i + 1 < fields.length; i += 2) {
+    if (fields[i] === name) return fields[i + 1];
+  }
+  return undefined;
 }
 
 function validate(

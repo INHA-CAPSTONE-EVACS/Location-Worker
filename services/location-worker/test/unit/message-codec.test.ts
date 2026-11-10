@@ -58,6 +58,31 @@ function decodeJson(envelope: unknown) {
   return decode(JSON.stringify(envelope));
 }
 
+function redisLocationFields(): string[] {
+  const eventId = '980fae5e-ae58-4aa8-966a-abbf33ee0daa';
+  return [
+    'eventId',
+    eventId,
+    'payload',
+    JSON.stringify({
+      eventId,
+      vehicleId: 'EVACS_CAR_003439',
+      vehicleType: 'NORMAL',
+      latitude: 37.4463509510421,
+      longitude: 126.65038118165134,
+      speedMps: 0,
+      headingDegrees: 172.82134151389272,
+      laneIndex: 1,
+      laneCount: 2,
+      measuredAt: '2026-11-10T13:44:38.017Z',
+      sequence: 66,
+      occurredAt: '2026-11-10T13:44:38.029Z',
+    }),
+    'vehicleId',
+    'EVACS_CAR_003439',
+  ];
+}
+
 function reasonOf(result: ReturnType<typeof decode>): ValidationReason {
   if (result.ok) throw new Error('expected a validation failure');
   return result.error.reason;
@@ -140,6 +165,37 @@ describe('decodeLocationEntry — AC-LW-005 검증 실패 13건과 대조군', (
 });
 
 describe('decodeLocationEntry — 정상 엔트리', () => {
+  it('Gateway가 기록한 Redis payload 필드를 v2 위치 이벤트로 정규화한다', () => {
+    const result = decodeLocationEntry(
+      redisLocationFields(),
+      Date.parse('2026-11-10T13:44:38.029Z'),
+      MAX_FUTURE_SKEW_MS,
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      event: {
+        eventId: '980fae5e-ae58-4aa8-966a-abbf33ee0daa',
+        eventType: 'VEHICLE_LOCATION_UPDATED',
+        schemaVersion: 2,
+        occurredAt: '2026-11-10T13:44:38.029Z',
+        producer: 'ws-server',
+        payload: {
+          vehicleId: 'EVACS_CAR_003439',
+          vehicleType: 'NORMAL',
+          latitude: 37.4463509510421,
+          longitude: 126.65038118165134,
+          speedMps: 0,
+          headingDegrees: 172.82134151389272,
+          measuredAt: '2026-11-10T13:44:38.017Z',
+          sequence: 66,
+          lane: {laneIndex: 1, laneCount: 2},
+        },
+      },
+      measuredAtMs: Date.parse('2026-11-10T13:44:38.017Z'),
+    });
+  });
+
   it('v2 차량 위치 이벤트의 lane 정보를 수용한다', () => {
     const result = decodeJson(validEnvelope());
 

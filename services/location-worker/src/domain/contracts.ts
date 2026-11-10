@@ -2,8 +2,12 @@
 // @MX:TODO: [AUTO] C5·C6 제안 기본값(공통 봉투, 단일 `event` 필드)이 Gateway·Emergency Worker 담당 확인 전이다
 // @MX:SPEC: SPEC-LOC-WORKER-001 plan.md §A.2.1
 
-/** Stream 엔트리에서 봉투 JSON을 담는 유일한 필드(C6). */
+/** 이전 봉투 형식을 지원하기 위한 Stream 필드. */
 export const EVENT_FIELD = 'event';
+/** Gateway가 위치 JSON을 기록하는 Stream 필드. */
+export const LOCATION_PAYLOAD_FIELD = 'payload';
+/** Gateway가 위치 이벤트 ID를 기록하는 Stream 필드. */
+export const LOCATION_EVENT_ID_FIELD = 'eventId';
 
 // Redis 키(design.md §2)
 export const LOCATION_STREAM = 'stream:vehicle:location';
@@ -21,6 +25,8 @@ export const LOCATION_EVENT_TYPE = 'VEHICLE_LOCATION_UPDATED';
 export const STATE_EVENT_TYPE = 'VEHICLE_STATE_UPDATED';
 export const LOCATION_SCHEMA_VERSION = 2;
 export const STATE_SCHEMA_VERSION = 1;
+/** Gateway가 Stream 레코드에 명시하지 않는 입력 producer. */
+export const LOCATION_EVENT_PRODUCER = 'ws-server';
 /** 출력 이벤트의 producer. 입력 봉투의 producer와 무관한 상수다(REQ-LW-018). */
 export const STATE_EVENT_PRODUCER = 'location-worker';
 
