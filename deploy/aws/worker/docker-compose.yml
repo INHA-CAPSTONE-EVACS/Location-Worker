@@ -8,7 +8,7 @@ services:
     init: true
     environment:
       NODE_ENV: production
-      REDIS_URL: redis://${REDIS_HOST:?Set REDIS_HOST in .env}:${REDIS_PORT:?Set REDIS_PORT in .env}/0
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@${REDIS_HOST:?Set REDIS_HOST in .env}:${REDIS_PORT:?Set REDIS_PORT in .env}/0
       HEALTH_PORT: "8080"
       H3_RESOLUTION: ${H3_RESOLUTION:-9}
       DENSITY_INTERVAL_MS: ${DENSITY_INTERVAL_MS:-1000}

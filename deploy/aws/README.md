@@ -8,9 +8,10 @@ central Redis endpoint. The endpoint must be reachable from the worker EC2 insta
 
 1. Transfer or clone this repository's `aws` branch on each worker EC2, then copy
    `worker/.env.example` to `worker/.env`.
-2. In `worker/.env`, set only the existing Redis endpoint's VPC-private IP
-   (`REDIS_HOST`) and port (`REDIS_PORT`). Container hostnames automatically supply
-   unique consumer and instance identifiers.
+2. In `worker/.env`, set the existing Redis endpoint's VPC-private IP
+   (`REDIS_HOST`), port (`REDIS_PORT`), and its ACL default-user password
+   (`REDIS_PASSWORD`). URL-encode reserved password characters. Container hostnames
+   automatically supply unique consumer and instance identifiers.
 3. Place the validated H3 table at `worker/edge-cell-table.json`. It is intentionally
    ignored by Git so each deployment can use its own region-specific table.
 4. Build and start from the local checkout:
@@ -29,8 +30,8 @@ than one worker from publishing the same density generation.
 - Allow worker EC2 instances to reach the existing Redis endpoint only through its
   approved private network path and security-group rule.
 - Keep the Redis endpoint reachable only through its approved VPC route and
-  security-group rule. This worker-only template assumes that endpoint does not
-  require Redis authentication.
+  security-group rule. Store `REDIS_PASSWORD` outside Git (for example, in SSM
+  Parameter Store or Secrets Manager) and render it into the ignored `.env` file.
 
 ## Template verification
 
@@ -41,5 +42,4 @@ sh deploy/aws/test_compose.sh
 ```
 
 It renders the worker template with disposable values and asserts the local image build
-context, Redis endpoint wiring derived from VPC IP and port, and the read-only H3
-table mount.
+context, authenticated Redis endpoint wiring, and the read-only H3 table mount.
