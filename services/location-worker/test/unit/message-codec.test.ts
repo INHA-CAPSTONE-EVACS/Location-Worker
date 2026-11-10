@@ -13,7 +13,7 @@ function validEnvelope(): Json {
   return {
     eventId: 'evt-1',
     eventType: 'VEHICLE_LOCATION_UPDATED',
-    schemaVersion: 1,
+    schemaVersion: 2,
     occurredAt: '2026-11-03T00:00:09.950Z',
     producer: 'vehicle-client',
     payload: {
@@ -25,6 +25,7 @@ function validEnvelope(): Json {
       headingDegrees: 90,
       measuredAt: '2026-11-03T00:00:09.900Z',
       sequence: 42,
+      lane: {laneIndex: 1, laneCount: 3},
     },
   };
 }
@@ -72,8 +73,8 @@ describe('decodeLocationEntry — AC-LW-005 검증 실패 13건과 대조군', (
       'UNEXPECTED_EVENT_TYPE',
     ],
     [
-      'schemaVersion 2',
-      () => decodeJson({...validEnvelope(), schemaVersion: 2}),
+      'schemaVersion 1',
+      () => decodeJson({...validEnvelope(), schemaVersion: 1}),
       'UNSUPPORTED_SCHEMA_VERSION',
     ],
     [
@@ -139,6 +140,16 @@ describe('decodeLocationEntry — AC-LW-005 검증 실패 13건과 대조군', (
 });
 
 describe('decodeLocationEntry — 정상 엔트리', () => {
+  it('v2 차량 위치 이벤트의 lane 정보를 수용한다', () => {
+    const result = decodeJson(validEnvelope());
+
+    expect(result).toEqual({
+      ok: true,
+      event: validEnvelope(),
+      measuredAtMs: Date.parse('2026-11-03T00:00:09.900Z'),
+    });
+  });
+
   it('봉투와 payload를 그대로 돌려주고 measuredAt을 ms로 계산한다', () => {
     const result = decodeJson(validEnvelope());
 
@@ -260,8 +271,8 @@ describe('decodeLocationEntry — 그 밖의 검증 실패', () => {
     );
   });
 
-  it('schemaVersion이 문자열 "1"이면 UNSUPPORTED_SCHEMA_VERSION', () => {
-    expect(reasonOf(decodeJson({...validEnvelope(), schemaVersion: '1'}))).toBe(
+  it('schemaVersion이 문자열 "2"이면 UNSUPPORTED_SCHEMA_VERSION', () => {
+    expect(reasonOf(decodeJson({...validEnvelope(), schemaVersion: '2'}))).toBe(
       'UNSUPPORTED_SCHEMA_VERSION',
     );
   });
@@ -274,6 +285,7 @@ describe('decodeLocationEntry — 그 밖의 검증 실패', () => {
     'headingDegrees',
     'measuredAt',
     'sequence',
+    'lane',
   ])('payload 필드 %s 누락은 MISSING_FIELD', field => {
     const result = decodeJson(withoutPayloadField(field));
 
@@ -297,6 +309,18 @@ describe('decodeLocationEntry — 그 밖의 검증 실패', () => {
       'INVALID_SEQUENCE',
     ],
     ['measuredAt 숫자', {measuredAt: INGEST_MS}, 'INVALID_MEASURED_AT'],
+    ['lane이 배열', {lane: []}, 'INVALID_ENVELOPE'],
+    [
+      'laneIndex -1',
+      {lane: {laneIndex: -1, laneCount: 3}},
+      'INVALID_LANE_INDEX',
+    ],
+    [
+      'laneIndex이 laneCount와 같음',
+      {lane: {laneIndex: 3, laneCount: 3}},
+      'INVALID_LANE_INDEX',
+    ],
+    ['laneCount 0', {lane: {laneIndex: 0, laneCount: 0}}, 'INVALID_LANE_COUNT'],
     ['measuredAt 날짜만', {measuredAt: '2026-11-03'}, 'INVALID_MEASURED_AT'],
     [
       'measuredAt 시간대 없음',

@@ -1,7 +1,7 @@
 import {
   EVENT_FIELD,
   LOCATION_EVENT_TYPE,
-  SCHEMA_VERSION,
+  LOCATION_SCHEMA_VERSION,
   VEHICLE_TYPES,
   VehicleLocationUpdatedEvent,
   VehicleType,
@@ -20,6 +20,8 @@ export type ValidationReason =
   | 'INVALID_SPEED'
   | 'UNKNOWN_VEHICLE_TYPE'
   | 'INVALID_SEQUENCE'
+  | 'INVALID_LANE_INDEX'
+  | 'INVALID_LANE_COUNT'
   | 'INVALID_MEASURED_AT'
   | 'MEASURED_AT_IN_FUTURE';
 
@@ -133,7 +135,7 @@ function parseEnvelope(
   if (parsed.schemaVersion === undefined || parsed.schemaVersion === null) {
     throw new Invalid('MISSING_FIELD', 'missing schemaVersion');
   }
-  if (parsed.schemaVersion !== SCHEMA_VERSION) {
+  if (parsed.schemaVersion !== LOCATION_SCHEMA_VERSION) {
     throw new Invalid(
       'UNSUPPORTED_SCHEMA_VERSION',
       `unsupported schemaVersion: ${String(parsed.schemaVersion)}`,
@@ -164,6 +166,7 @@ function validate(
     'headingDegrees',
     'measuredAt',
     'sequence',
+    'lane',
   ]) {
     if (payload[name] === undefined || payload[name] === null) {
       throw new Invalid('MISSING_FIELD', `missing payload.${name}`);
@@ -171,7 +174,7 @@ function validate(
   }
 
   const {vehicleType, latitude, longitude, speedMps, headingDegrees} = payload;
-  const {measuredAt, sequence} = payload;
+  const {measuredAt, sequence, lane} = payload;
   if (!VEHICLE_TYPES.includes(vehicleType as VehicleType)) {
     throw new Invalid(
       'UNKNOWN_VEHICLE_TYPE',
@@ -208,6 +211,31 @@ function validate(
       `sequence must be a non-negative integer: ${String(sequence)}`,
     );
   }
+  if (!isObject(lane)) {
+    throw new Invalid('INVALID_ENVELOPE', 'payload.lane is not an object');
+  }
+  const {laneIndex, laneCount} = lane;
+  if (
+    typeof laneCount !== 'number' ||
+    !Number.isSafeInteger(laneCount) ||
+    laneCount <= 0
+  ) {
+    throw new Invalid(
+      'INVALID_LANE_COUNT',
+      `laneCount must be a positive integer: ${String(laneCount)}`,
+    );
+  }
+  if (
+    typeof laneIndex !== 'number' ||
+    !Number.isSafeInteger(laneIndex) ||
+    laneIndex < 0 ||
+    laneIndex >= laneCount
+  ) {
+    throw new Invalid(
+      'INVALID_LANE_INDEX',
+      `laneIndex must be an integer in [0, laneCount): ${String(laneIndex)}`,
+    );
+  }
   const measuredAtMs = parseIsoDateTime(measuredAt);
   if (measuredAtMs === undefined) {
     throw new Invalid(
@@ -219,7 +247,7 @@ function validate(
   const event: VehicleLocationUpdatedEvent = {
     eventId: envelope.eventId as string,
     eventType: LOCATION_EVENT_TYPE,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: LOCATION_SCHEMA_VERSION,
     occurredAt: envelope.occurredAt as string,
     producer: envelope.producer as string,
     payload: {
@@ -231,6 +259,7 @@ function validate(
       headingDegrees,
       measuredAt: measuredAt as string,
       sequence: sequence as number,
+      lane: {laneIndex, laneCount},
     },
   };
   return {event, measuredAtMs};

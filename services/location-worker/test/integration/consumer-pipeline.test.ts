@@ -143,7 +143,7 @@ describe('LocationStreamConsumer 파이프라인', () => {
     const invalid: Array<(ingestMs: number) => string> = [
       () => '{not json',
       () => JSON.stringify({...valid({}), eventType: 'VEHICLE_STATE_UPDATED'}),
-      () => JSON.stringify({...valid({}), schemaVersion: 2}),
+      () => JSON.stringify({...valid({}), schemaVersion: 1}),
       () => {
         const e = valid({});
         delete (e.payload as Record<string, unknown>).vehicleId;

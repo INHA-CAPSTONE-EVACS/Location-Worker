@@ -19,7 +19,8 @@ export const vehicleVersionKey = (vehicleId: string) =>
 
 export const LOCATION_EVENT_TYPE = 'VEHICLE_LOCATION_UPDATED';
 export const STATE_EVENT_TYPE = 'VEHICLE_STATE_UPDATED';
-export const SCHEMA_VERSION = 1;
+export const LOCATION_SCHEMA_VERSION = 2;
+export const STATE_SCHEMA_VERSION = 1;
 /** 출력 이벤트의 producer. 입력 봉투의 producer와 무관한 상수다(REQ-LW-018). */
 export const STATE_EVENT_PRODUCER = 'location-worker';
 
@@ -27,17 +28,28 @@ export const VEHICLE_TYPES = ['NORMAL', 'EMERGENCY'] as const;
 export type VehicleType = (typeof VEHICLE_TYPES)[number];
 
 /** 공통 이벤트 봉투(설계서 p96-97). */
-export interface EventEnvelope<TType extends string, TPayload> {
+export interface EventEnvelope<
+  TType extends string,
+  TPayload,
+  TSchemaVersion extends number,
+> {
   eventId: string;
   eventType: TType;
-  schemaVersion: typeof SCHEMA_VERSION;
+  schemaVersion: TSchemaVersion;
   /** UTC ISO 8601 */
   occurredAt: string;
   producer: string;
   payload: TPayload;
 }
 
-/** `VEHICLE_LOCATION_UPDATED` payload(설계서 p98). */
+/** `VEHICLE_LOCATION_UPDATED` v2 payload. */
+export interface VehicleLane {
+  /** 0-based lane index. */
+  laneIndex: number;
+  /** Total number of lanes on the road segment. */
+  laneCount: number;
+}
+
 export interface VehicleLocationPayload {
   vehicleId: string;
   vehicleType: VehicleType;
@@ -53,11 +65,13 @@ export interface VehicleLocationPayload {
   measuredAt: string;
   /** 차량별 위치 갱신 순번, 0 이상 정수 */
   sequence: number;
+  lane: VehicleLane;
 }
 
 export type VehicleLocationUpdatedEvent = EventEnvelope<
   typeof LOCATION_EVENT_TYPE,
-  VehicleLocationPayload
+  VehicleLocationPayload,
+  typeof LOCATION_SCHEMA_VERSION
 >;
 
 /** `VEHICLE_STATE_UPDATED` payload(REQ-LW-018). */
@@ -74,5 +88,6 @@ export interface VehicleStateUpdatedPayload {
 /** eventId = `vst-{vehicleId}-{stateVersion}`, producer = `location-worker`. */
 export type VehicleStateUpdatedEvent = EventEnvelope<
   typeof STATE_EVENT_TYPE,
-  VehicleStateUpdatedPayload
+  VehicleStateUpdatedPayload,
+  typeof STATE_SCHEMA_VERSION
 > & {producer: typeof STATE_EVENT_PRODUCER};

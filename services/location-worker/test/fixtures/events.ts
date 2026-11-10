@@ -31,7 +31,7 @@ export function locationEvent(
   return {
     eventId: o.eventId ?? `evt-${counter}`,
     eventType: 'VEHICLE_LOCATION_UPDATED',
-    schemaVersion: 1,
+    schemaVersion: 2,
     occurredAt: new Date(measuredAtMs).toISOString(),
     producer: o.producer ?? 'vehicle-client',
     payload: {
@@ -43,6 +43,7 @@ export function locationEvent(
       headingDegrees: o.headingDegrees ?? 90,
       measuredAt: new Date(measuredAtMs).toISOString(),
       sequence: o.sequence ?? 1,
+      lane: {laneIndex: 0, laneCount: 1},
     },
   };
 }
